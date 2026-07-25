@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0e6978" />
+    <title>올여름 내가 토스할게 체험판</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="ball-mark" aria-hidden="true"></span>
+          <span>올여름 내가 토스할게</span>
+          <span class="prototype-badge">체험판</span>
+        </div>
+        <button class="text-button" id="resetButton" type="button">처음부터</button>
+      </header>
+
+      <section class="screen intro-screen" id="introScreen">
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-sun"></div>
+          <div class="hero-net"></div>
+          <div class="hero-ball"></div>
+          <div class="hero-player left-player"></div>
+          <div class="hero-player right-player"></div>
+        </div>
+
+        <p class="eyebrow">토스에서 토스, 우리 둘은 통할까?</p>
+        <h1>올여름,<br />내가 토스할게!</h1>
+        <p class="lead">
+          한 사람이 만든 공의 타이밍을 상대가 받아치고, 역할을 바꿔
+          둘만의 오늘 호흡을 확인해요.
+        </p>
+
+        <div class="name-fields">
+          <label>
+            첫 번째 사람
+            <input id="creatorName" maxlength="8" value="나" />
+          </label>
+          <label>
+            함께할 사람
+            <input id="partnerName" maxlength="8" value="친구" />
+          </label>
+        </div>
+
+        <button class="primary-button" id="startButton" type="button">
+          같은 기기로 둘이 체험하기
+        </button>
+        <p class="helper">
+          실제 초대 링크 대신 기기를 서로 건네는 제품 검증용 버전이에요.
+        </p>
+      </section>
+
+      <section class="screen handoff-screen hidden" id="handoffScreen">
+        <div class="handoff-icon" aria-hidden="true">🏐</div>
+        <p class="eyebrow" id="handoffEyebrow">기기를 건네주세요</p>
+        <h2 id="handoffTitle"></h2>
+        <p id="handoffDescription"></p>
+        <button class="primary-button" id="handoffButton" type="button">
+          준비됐어요
+        </button>
+      </section>
+
+      <section class="play-screen hidden day" id="playScreen">
+        <div class="play-copy">
+          <div class="round-meta">
+            <span id="sceneLabel">한낮</span>
+            <span id="roundLabel">1 / 3</span>
+          </div>
+          <h2 id="playTitle">공을 올려주세요</h2>
+          <p id="playInstruction"></p>
+        </div>
+
+        <div class="court" id="court" aria-live="polite">
+          <div class="sky-glow"></div>
+          <div class="cloud cloud-one"></div>
+          <div class="cloud cloud-two"></div>
+          <div class="ocean">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="sand"></div>
+          <div class="net">
+            <span></span>
+          </div>
+          <div class="player setter">
+            <i class="head"></i>
+            <i class="body"></i>
+            <i class="arm arm-one"></i>
+            <i class="arm arm-two"></i>
+          </div>
+          <div class="player spiker">
+            <i class="head"></i>
+            <i class="body"></i>
+            <i class="arm arm-one"></i>
+            <i class="arm arm-two"></i>
+          </div>
+          <div class="game-ball" id="gameBall"></div>
+          <div class="impact" id="impact"></div>
+          <div class="feedback" id="feedback"></div>
+        </div>
+
+        <div class="round-dots" id="roundDots" aria-label="공 진행 상태"></div>
+        <button class="action-button" id="actionButton" type="button">
+          지금 토스!
+        </button>
+        <p class="action-helper" id="actionHelper">
+          공이 손에 들어온다고 느껴질 때 눌러주세요.
+        </p>
+      </section>
+
+      <section class="screen result-screen hidden" id="firstResultScreen">
+        <div class="mini-result-card">
+          <p class="eyebrow">첫 번째 공을 주고받았어요</p>
+          <h2>첫 호흡 <span id="firstScore">0점</span></h2>
+          <p id="firstResultCopy"></p>
+        </div>
+        <div class="meaning-card">
+          <strong>아직 최종 결과가 아니에요</strong>
+          <p>
+            한 사람만 상대에게 맞춘 점수예요. 역할을 바꿔야 서로의
+            진짜 호흡을 볼 수 있어요.
+          </p>
+        </div>
+        <button class="primary-button" id="returnTossButton" type="button">
+          이번엔 답토스 올리기
+        </button>
+      </section>
+
+      <section class="screen final-screen hidden" id="finalResultScreen">
+        <div class="final-poster" id="finalPoster">
+          <div class="poster-sun"></div>
+          <p>우리의 2026 여름 기록</p>
+          <h2 id="finalPairName"></h2>
+          <div class="final-score">
+            <span>오늘의 호흡</span>
+            <strong id="finalScore">0점</strong>
+          </div>
+          <h3 id="finalTitle"></h3>
+          <p id="finalScene"></p>
+        </div>
+
+        <div class="evidence-card" id="evidenceCard"></div>
+        <p class="disclaimer">
+          이 결과는 두 번의 입력 타이밍을 재미로 비교한 오늘의
+          기록이며, 실제 관계나 성향을 판단하지 않아요.
+        </p>
+
+        <button class="primary-button" id="playAgainButton" type="button">
+          새로운 토스로 다시 해보기
+        </button>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
