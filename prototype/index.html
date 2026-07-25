@@ -4,15 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0e6978" />
-    <title>올여름 내가 토스할게 체험판</title>
-    <link
-      rel="preload"
-      href="./assets/comic-cover.jpg"
-      as="image"
-      fetchpriority="high"
+    <title>올여름 내가 토스할게</title>
+    <meta
+      name="description"
+      content="친구에게 여름 한 컷을 토스하고, 이어받아 함께 완성해요."
     />
-    <link rel="preload" href="./assets/comic-toss-play.jpg" as="image" />
-    <link rel="preload" href="./assets/comic-spike-play.jpg" as="image" />
+    <meta property="og:title" content="올여름 내가 토스할게" />
+    <meta
+      property="og:description"
+      content="친구에게 여름 한 컷을 토스하고, 이어받아 함께 완성해요."
+    />
+    <meta property="og:image" content="./assets/comic-cover.jpg" />
+    <meta property="og:type" content="website" />
+    <link rel="preload" href="./assets/beach-court-day.jpg" as="image" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -23,144 +27,112 @@
           <span>올여름 내가 토스할게</span>
           <span class="prototype-badge">체험판</span>
         </div>
-        <button class="text-button" id="resetButton" type="button">처음부터</button>
+        <button class="text-button" id="restartButton" type="button">
+          처음부터
+        </button>
       </header>
 
-      <section class="screen intro-screen" id="introScreen">
-        <div class="hero-visual" aria-hidden="true">
-          <div class="hero-scene"></div>
-          <div class="comic-dots"></div>
-          <span class="chapter-ribbon">프롤로그</span>
-          <span class="cover-bubble">받을 준비 됐어?</span>
-          <p class="cover-caption">한 번의 토스가<br />우리 여름을 시작했다.</p>
-        </div>
-
-        <p class="eyebrow">PLAYABLE SUMMER WEBTOON · 체험판</p>
-        <h1>올여름,<br />내가 토스할게!</h1>
-        <p class="lead">
-          한 사람이 만든 공의 타이밍을 상대가 받아치고 역할을 바꿔요.
-          한 편의 여름 만화를 직접 완성해 보세요.
-        </p>
-
-        <div class="name-fields">
-          <label>
-            첫 번째 사람
-            <input id="creatorName" maxlength="8" value="나" />
-          </label>
-          <label>
-            함께할 사람
-            <input id="partnerName" maxlength="8" value="친구" />
-          </label>
-        </div>
-
-        <button class="primary-button" id="startButton" type="button">
-          같은 기기로 둘이 체험하기
+      <!-- A. 링크로 들어온 사람이 앞 컷을 받는 화면 -->
+      <section class="screen hidden" id="receiveScreen">
+        <p class="eyebrow" id="receiveCount"></p>
+        <h1 class="screen-title">여름 한 컷이<br />도착했어요</h1>
+        <div id="incomingCut"></div>
+        <button class="primary-button" id="continueButton" type="button">
+          나도 이어쓰기
         </button>
-        <p class="helper">
-          실제 초대 링크 대신 기기를 서로 건네는 제품 검증용 버전이에요.
-        </p>
-      </section>
-
-      <section class="screen handoff-screen hidden" id="handoffScreen">
-        <div class="handoff-comic" aria-hidden="true">
-          <div class="handoff-art"></div>
-          <span>다음 컷은<br />상대의 손에서</span>
-          <i></i>
-        </div>
-        <p class="eyebrow" id="handoffEyebrow">기기를 건네주세요</p>
-        <h2 id="handoffTitle"></h2>
-        <p id="handoffDescription"></p>
-        <button class="primary-button" id="handoffButton" type="button">
-          준비됐어요
+        <button class="text-link" id="viewStripFromReceive" type="button">
+          지금까지 이어진 컷 보기
         </button>
       </section>
 
-      <section class="play-screen hidden day" id="playScreen">
-        <div class="play-copy">
-          <div class="round-meta">
-            <span id="panelLabel">1컷 · 한낮</span>
-            <span id="roundLabel">1 / 3</span>
-          </div>
-          <h2 id="playTitle">공을 올려주세요</h2>
-          <p id="playInstruction"></p>
-        </div>
+      <!-- B. 내 컷 만들기 -->
+      <section class="screen hidden" id="composeScreen">
+        <p class="eyebrow" id="composeEyebrow">2026 여름</p>
+        <h1 class="screen-title" id="composeTitle">
+          이번 여름,<br />어떤 장면이 좋아요?
+        </h1>
 
-        <div class="court" id="court">
-          <div class="comic-art-stack" aria-hidden="true">
-            <div class="comic-art comic-art-toss"></div>
-            <div class="comic-art comic-art-spike"></div>
-          </div>
-          <div class="time-grade" aria-hidden="true"></div>
-          <div class="panel-ink" aria-hidden="true"></div>
-          <div class="manga-speed-lines" aria-hidden="true">
-            <i></i><i></i><i></i><i></i><i></i><i></i>
-          </div>
-          <span class="panel-kicker" id="panelKicker">CHAPTER 1 · TOSS</span>
-          <div class="speech-bubble" id="speechBubble">내 박자를 기억해!</div>
-          <div class="ball-shadow" id="ballShadow" aria-hidden="true"></div>
-          <div class="game-ball" id="gameBall"></div>
-          <div class="impact" id="impact"></div>
-          <div class="impact-word" id="impactWord" aria-hidden="true">정타!</div>
-          <div class="particle-field" id="particleField" aria-hidden="true"></div>
-          <div
-            class="feedback"
-            id="feedback"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          ></div>
-        </div>
+        <fieldset class="choice-block">
+          <legend>여름 장면</legend>
+          <div class="scene-grid" id="sceneGroup"></div>
+        </fieldset>
 
-        <div class="round-dots" id="roundDots" aria-label="공 진행 상태"></div>
-        <button class="action-button" id="actionButton" type="button">
-          지금 토스!
+        <fieldset class="choice-block">
+          <legend>내가 맡을 것</legend>
+          <div class="chip-grid" id="roleGroup"></div>
+        </fieldset>
+
+        <fieldset class="choice-block">
+          <legend>한마디</legend>
+          <div class="chip-grid" id="lineGroup"></div>
+          <input
+            class="text-input"
+            id="customLine"
+            maxlength="20"
+            placeholder="직접 쓰기 (20자)"
+            aria-label="한마디 직접 쓰기"
+          />
+        </fieldset>
+
+        <fieldset class="choice-block">
+          <legend>이름</legend>
+          <input
+            class="text-input"
+            id="nameInput"
+            maxlength="8"
+            placeholder="여름 친구"
+            aria-label="이름"
+          />
+          <p class="field-note">비워두면 `여름 친구`로 남아요.</p>
+        </fieldset>
+
+        <button class="primary-button" id="tossButton" type="button" disabled>
+          토스하기
         </button>
-        <p class="action-helper" id="actionHelper">
-          공이 손에 들어온다고 느껴질 때 눌러주세요.
+        <p class="helper" id="composeHelper" role="status" aria-live="polite">
+          장면과 맡을 것을 고르면 토스할 수 있어요.
         </p>
       </section>
 
-      <section class="screen result-screen hidden" id="firstResultScreen">
-        <div class="mini-result-card">
-          <span class="result-cut-label">중간 컷</span>
-          <p class="eyebrow">첫 번째 공을 주고받았어요</p>
-          <h2>첫 호흡 <span id="firstScore">0점</span></h2>
-          <p id="firstResultCopy"></p>
+      <!-- C. 토스 전환 연출 -->
+      <section class="screen hidden" id="tossScreen">
+        <div class="toss-stage" id="tossStage" aria-hidden="true">
+          <span class="toss-ball" id="tossBall"></span>
         </div>
-        <div class="meaning-card">
-          <strong>아직 최종 결과가 아니에요</strong>
-          <p>
-            한 사람만 상대에게 맞춘 점수예요. 역할을 바꿔야 서로의
-            진짜 호흡을 볼 수 있어요.
-          </p>
-        </div>
-        <button class="primary-button" id="returnTossButton" type="button">
-          이번엔 답토스 올리기
-        </button>
+        <p class="eyebrow">TOSS</p>
+        <h2 class="screen-title" id="tossMessage">공이 날아가는 중</h2>
       </section>
 
-      <section class="screen final-screen hidden" id="finalResultScreen">
-        <div class="final-poster" id="finalPoster">
+      <!-- D. 우리 릴레이 -->
+      <section class="screen hidden" id="stripScreen">
+        <p class="countdown" id="countdown"></p>
+        <p class="eyebrow" id="stripCount"></p>
+        <h1 class="screen-title">우리 여름 릴레이</h1>
+
+        <div class="strip" id="stripList"></div>
+
+        <div class="poster" id="poster">
           <div class="poster-scene" aria-hidden="true"></div>
-          <div class="poster-halftone" aria-hidden="true"></div>
-          <p>EPILOGUE · 우리의 2026 여름 기록</p>
-          <h2 id="finalPairName"></h2>
-          <div class="final-score">
-            <span>오늘의 호흡</span>
-            <strong id="finalScore">0점</strong>
-          </div>
-          <h3 id="finalTitle"></h3>
-          <p id="finalScene"></p>
+          <p class="poster-kicker">2026 SUMMER RELAY</p>
+          <h2 id="posterHeadline"></h2>
+          <p id="posterNames"></p>
         </div>
 
-        <div class="evidence-card" id="evidenceCard"></div>
-        <p class="disclaimer">
-          이 결과는 두 번의 입력 타이밍을 재미로 비교한 오늘의
-          기록이며, 실제 관계나 성향을 판단하지 않아요.
-        </p>
+        <button class="primary-button" id="shareButton" type="button">
+          이어서 토스할 친구에게 보내기
+        </button>
 
-        <button class="primary-button" id="playAgainButton" type="button">
-          새로운 토스로 다시 해보기
+        <div class="share-box hidden" id="shareBox">
+          <label class="field-note" for="shareLink">이 링크를 보내면 이어져요</label>
+          <div class="share-row">
+            <input class="text-input" id="shareLink" readonly />
+            <button class="copy-button" id="copyButton" type="button">복사</button>
+          </div>
+          <p class="field-note" id="copyStatus" role="status" aria-live="polite"></p>
+        </div>
+
+        <button class="text-link" id="newRelayButton" type="button">
+          새 릴레이 시작하기
         </button>
       </section>
     </main>
