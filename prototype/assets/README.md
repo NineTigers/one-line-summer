@@ -1,45 +1,68 @@
-# 비치 코트 이미지 세트
+# 인터랙티브 여름 웹툰 이미지 세트
 
 ## 사용 목적
 
-`올여름 내가 토스할게` 체험판에서 한낮·노을·여름밤의 감정 변화를
-만드는 세로형 비치 코트 배경이다. 선수·네트·공·효과는 이미지에
-포함하지 않고 DOM/CSS 레이어로 분리했다.
+`올여름 내가 토스할게` 체험판을 “여름 스포츠 웹툰 × 로맨틱 코미디
+× 아케이드 손맛”으로 보여주는 세로형 이미지 세트다. 표지부터 토스,
+스파이크, 엔딩까지 같은 두 캐릭터와 비치발리볼 코트를 유지한다.
 
-## 파일
+플레이 화면의 공은 이미지에 포함하지 않는다. `app.js`가 제어하는
+단일 DOM 공만 움직이게 해 입력 타이밍과 이미지 속 손의 접점을
+일치시킨다.
 
-- `beach-court-day.jpg`: 한낮
-- `beach-court-sunset.jpg`: 노을
-- `beach-court-night.jpg`: 여름밤
+## 현재 런타임 파일
 
-세 파일은 562×1000 JPEG이며 합계 약 575KB다.
+| 파일 | 크기 | 용도 |
+| --- | ---: | --- |
+| `comic-cover.jpg` | 1013×1800, 635,745B | 첫 화면 표지 |
+| `comic-toss-play.jpg` | 1013×1800, 648,749B | 토스 플레이 컷, 정지 공 제거 |
+| `comic-spike-play.jpg` | 1013×1800, 737,310B | 스파이크 플레이 컷, 정지 공 제거 |
+| `comic-finale.jpg` | 1013×1800, 727,872B | 최종 결과 포스터 |
 
-## 생성 방식
+`index.html`은 표지·토스·스파이크 이미지를 미리 불러오고,
+`app.js`는 위 네 파일을 모두 프리로드한다.
 
-OpenAI 내장 이미지 생성 도구로 한낮 원본을 만들고, 동일 구도를
-유지한 조명·시간대 편집으로 노을과 여름밤을 제작했다. 생성 원본은
-941×1672 PNG이며, 모바일 로딩 예산을 위해 JPEG로 축소·압축했다.
+## 제작·검수용 파일
 
-## 생성 프롬프트 원문
+| 파일 | 크기 | 용도 |
+| --- | ---: | --- |
+| `comic-character-anchor.jpg` | 1200×1800, 671,109B | 두 캐릭터의 외형 기준 |
+| `comic-toss.jpg` | 1013×1800, 679,466B | 정지 공이 포함된 토스 원본 컷 |
+| `comic-spike.jpg` | 1013×1800, 752,382B | 정지 공이 포함된 스파이크 원본 컷 |
 
-### 한낮
+`comic-character-anchor.jpg`, `comic-toss.jpg`, `comic-spike.jpg`는 현재
+화면에 직접 사용하지 않는다. 캐릭터 일관성 확인과 플레이용 파생
+이미지 재제작 때 기준으로 보존한다.
 
-> A vivid, premium summer beach volleyball environment for a social timing
-> mini-game. Vertical 9:16, polished 2.5D editorial game illustration,
-> sunlit sand, turquoise ocean and deep cyan sky. Keep a clear central action
-> lane. Environment only; no people, volleyball, net, court lines, text,
-> logos, UI or watermark.
+## 생성·파생 방식
 
-### 노을
+- OpenAI 내장 이미지 생성 도구로 동일 캐릭터 기준 이미지와 표지,
+  토스, 스파이크, 엔딩 컷을 제작했다.
+- `comic-toss-play.jpg`와 `comic-spike-play.jpg`에서는 정지 이미지 속
+  공을 제거했다.
+- 실제 플레이 공, 그림자, 궤적, 임팩트 문자, 속도선, 파티클은
+  HTML/CSS/JavaScript 레이어다.
+- 한낮·노을·여름밤은 같은 이미지 위의 런타임 색 보정으로 구분한다.
 
-> Preserve the exact midday beach composition and transform only the time of
-> day into vivid golden hour: coral sun, peach and magenta sky, warm sand,
-> orange-pink ocean reflections. Keep the empty central action lane and add
-> no people, volleyball, net, text, logos, UI or watermark.
+## 모바일 크롭 기준
 
-### 여름밤
+- 기준 화면: 390×844, 320×760
+- 토스 접점: DOM 공 중심 `left: 57%`, `top: 16%`
+- 토스 상승점: `left: 57%` 부근, `top: 7%`
+- 스파이크 정타점: DOM 공 중심 `left: 56%`, `top: 11%`
+- 두 크기 모두 토스 양손, 공, 상대 캐릭터가 한 컷 안에 남아야 한다.
+- 토스 말풍선은 `top: 34%`의 빈 하늘 영역을 사용해 손과 공을 가리지
+  않아야 한다.
 
-> Preserve the exact beach composition and transform only the time of day
-> into an electric summer night: indigo-to-teal sky, moon reflection,
-> scattered stars, aqua wave edges and subtle coral glow. Keep the scene
-> readable and add no people, volleyball, net, text, logos, UI or watermark.
+## 이전 배경 세트
+
+`beach-court-day.jpg`, `beach-court-sunset.jpg`,
+`beach-court-night.jpg`는 초기 DOM 캐릭터 버전의 562×1000 배경이다.
+현재 인터랙티브 웹툰 화면에서는 사용하지 않지만 방향 비교를 위해
+보존한다.
+
+## 남은 자산 작업
+
+- 실제 미니앱 번들 전환 전에 JPEG/WebP 용량과 첫 화면 로딩 예산 측정
+- 앱인토스 배포 환경의 캐시·프리로드 전략 확인
+- 최종 공유 카드가 필요하면 엔딩 컷과 결과 텍스트의 합성 규격 분리
