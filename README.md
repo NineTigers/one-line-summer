@@ -54,11 +54,12 @@
 ## 브라우저 체험판
 
 `prototype/`에는 같은 기기를 두 사람이 주고받는 토스–스파이크
-패스앤플레이 체험판이 있다.
+패스앤플레이 체험판이 있다. 한낮·노을·여름밤 전용 비치 이미지와
+DOM 애니메이션을 결합해 공의 가독성과 여름 현장감을 함께 검증한다.
 
 ```bash
-python3 -m http.server 4174 --directory prototype
+python3 -m http.server 4184 --directory prototype
 ```
 
-실행 후 `http://127.0.0.1:4174`에서 열고
+실행 후 `http://127.0.0.1:4184`에서 열고
 [체험 점검표](prototype/TEST-SCRIPT.md)를 따른다.

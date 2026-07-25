@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0e6978" />
     <title>올여름 내가 토스할게 체험판</title>
+    <link
+      rel="preload"
+      href="./assets/beach-court-day.jpg"
+      as="image"
+      fetchpriority="high"
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -20,11 +26,15 @@
 
       <section class="screen intro-screen" id="introScreen">
         <div class="hero-visual" aria-hidden="true">
+          <div class="hero-scene"></div>
+          <div class="hero-light"></div>
           <div class="hero-sun"></div>
           <div class="hero-net"></div>
           <div class="hero-ball"></div>
           <div class="hero-player left-player"></div>
           <div class="hero-player right-player"></div>
+          <div class="hero-swoosh swoosh-one"></div>
+          <div class="hero-swoosh swoosh-two"></div>
         </div>
 
         <p class="eyebrow">토스에서 토스, 우리 둘은 통할까?</p>
@@ -74,6 +84,12 @@
         </div>
 
         <div class="court" id="court" aria-live="polite">
+          <div class="scene-stack" aria-hidden="true">
+            <div class="scene-layer scene-day"></div>
+            <div class="scene-layer scene-sunset"></div>
+            <div class="scene-layer scene-night"></div>
+          </div>
+          <div class="scene-vignette" aria-hidden="true"></div>
           <div class="sky-glow"></div>
           <div class="cloud cloud-one"></div>
           <div class="cloud cloud-two"></div>
@@ -98,8 +114,15 @@
             <i class="arm arm-one"></i>
             <i class="arm arm-two"></i>
           </div>
+          <div class="motion-streaks" aria-hidden="true">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+          <div class="ball-shadow" id="ballShadow" aria-hidden="true"></div>
           <div class="game-ball" id="gameBall"></div>
           <div class="impact" id="impact"></div>
+          <div class="particle-field" id="particleField" aria-hidden="true"></div>
           <div class="feedback" id="feedback"></div>
         </div>
 
@@ -132,6 +155,8 @@
 
       <section class="screen final-screen hidden" id="finalResultScreen">
         <div class="final-poster" id="finalPoster">
+          <div class="poster-scene" aria-hidden="true"></div>
+          <div class="poster-rays" aria-hidden="true"></div>
           <div class="poster-sun"></div>
           <p>우리의 2026 여름 기록</p>
           <h2 id="finalPairName"></h2>

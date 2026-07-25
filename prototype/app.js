@@ -11,6 +11,7 @@ const state = {
   direction: null,
   round: 0,
   animationFrame: null,
+  runVersion: 0,
   roundStartedAt: 0,
   inputLocked: false,
   handoffAction: null,
@@ -29,10 +30,22 @@ const screens = {
 };
 
 const playScreen = screens.play;
+const court = document.querySelector("#court");
 const gameBall = document.querySelector("#gameBall");
+const ballShadow = document.querySelector("#ballShadow");
 const actionButton = document.querySelector("#actionButton");
 const feedback = document.querySelector("#feedback");
 const impact = document.querySelector("#impact");
+const particleField = document.querySelector("#particleField");
+
+[
+  "./assets/beach-court-day.jpg",
+  "./assets/beach-court-sunset.jpg",
+  "./assets/beach-court-night.jpg",
+].forEach((source) => {
+  const image = new Image();
+  image.src = source;
+});
 
 function showScreen(target) {
   Object.values(screens).forEach((screen) => {
@@ -54,6 +67,24 @@ function clamp(value, minimum, maximum) {
 
 function average(values) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function scheduleForCurrentRun(callback, delay) {
+  const version = state.runVersion;
+  window.setTimeout(() => {
+    if (version === state.runVersion) callback();
+  }, delay);
+}
+
+function placeBall(left, top, rotation, scale = 1) {
+  const heightRatio = clamp((68 - top) / 58, 0, 1);
+  gameBall.style.left = `${left}%`;
+  gameBall.style.top = `${top}%`;
+  gameBall.style.transform = `translate(-50%, -50%) rotate(${rotation}deg) scale(${scale})`;
+  ballShadow.style.left = `${left}%`;
+  ballShadow.style.opacity = `${0.16 + (1 - heightRatio) * 0.34}`;
+  ballShadow.style.transform =
+    `translateX(-50%) scale(${0.58 + (1 - heightRatio) * 0.56})`;
 }
 
 function setScene(round) {
@@ -81,9 +112,46 @@ function showFeedback(message) {
 }
 
 function showImpact() {
+  const left = Number.parseFloat(gameBall.style.left) || 50;
+  const top = Number.parseFloat(gameBall.style.top) || 38;
+
   impact.classList.remove("show");
+  court.classList.remove("is-impact");
   void impact.offsetWidth;
+  court.style.setProperty("--impact-left", `${left}%`);
+  court.style.setProperty("--impact-top", `${top}%`);
+  impact.style.left = `${left}%`;
+  impact.style.top = `${top}%`;
   impact.classList.add("show");
+  court.classList.add("is-impact");
+  emitContactParticles(left, top);
+
+  window.setTimeout(() => {
+    court.classList.remove("is-impact");
+  }, 540);
+}
+
+function emitContactParticles(left, top) {
+  const colors = ["#fff5ba", "#ffcf57", "#ff7c68", "#71e4ec"];
+  particleField.replaceChildren();
+
+  Array.from({ length: 14 }, (_, index) => {
+    const particle = document.createElement("i");
+    const angle = (Math.PI * 2 * index) / 14;
+    const distance = 38 + (index % 4) * 13;
+    particle.style.left = `${left}%`;
+    particle.style.top = `${top}%`;
+    particle.style.setProperty("--particle-x", `${Math.cos(angle) * distance}px`);
+    particle.style.setProperty("--particle-y", `${Math.sin(angle) * distance}px`);
+    particle.style.setProperty("--particle-r", `${120 + index * 31}deg`);
+    particle.style.setProperty(
+      "--particle-color",
+      colors[index % colors.length],
+    );
+    particleField.append(particle);
+  });
+
+  window.setTimeout(() => particleField.replaceChildren(), 720);
 }
 
 function showHandoff({ eyebrow, title, description, button, action }) {
@@ -106,6 +174,8 @@ function preparePlayScreen(mode, actor) {
   showScreen(screens.play);
 
   const isToss = mode === "toss";
+  playScreen.classList.toggle("toss-mode", isToss);
+  playScreen.classList.toggle("spike-mode", !isToss);
   document.querySelector("#playTitle").textContent = isToss
     ? `${actor}, 공을 올려주세요`
     : `${actor}, 공을 받아주세요`;
@@ -139,10 +209,11 @@ function startRound() {
   stopAnimation();
   state.inputLocked = false;
   actionButton.disabled = false;
+  court.classList.remove("is-impact", "is-launching");
   setScene(state.round);
   renderRoundDots();
   gameBall.style.opacity = "1";
-  gameBall.style.transform = "rotate(0deg)";
+  placeBall(23, 58, 0);
   feedback.classList.remove("show");
 
   if (state.mode === "toss") {
@@ -160,9 +231,7 @@ function startTossAnimation() {
     const depth = 0.5 - 0.5 * Math.cos(cycle * Math.PI * 2);
     const top = 12 + depth * 48;
     const sway = Math.sin(cycle * Math.PI * 2) * 4;
-    gameBall.style.left = `${23 + sway}%`;
-    gameBall.style.top = `${top}%`;
-    gameBall.style.transform = `rotate(${cycle * 360}deg)`;
+    placeBall(23 + sway, top, cycle * 360);
     state.animationFrame = requestAnimationFrame(animate);
   };
 
@@ -187,9 +256,11 @@ function recordToss() {
   });
 
   stopAnimation();
+  court.classList.add("is-launching");
   showFeedback(depth > 0.78 ? "빠르고 낮은 토스!" : depth > 0.45 ? "편안한 토스!" : "높고 긴 토스!");
   previewToss({ duration, arcHeight });
-  window.setTimeout(advanceRound, 650);
+  window.setTimeout(() => court.classList.remove("is-launching"), 540);
+  scheduleForCurrentRun(advanceRound, 650);
 }
 
 function previewToss(toss) {
@@ -200,9 +271,7 @@ function previewToss(toss) {
     const progress = clamp((now - started) / previewDuration, 0, 1);
     const top = 58 - (toss.arcHeight * 0.55) * 4 * progress * (1 - progress);
     const left = 23 + progress * 54;
-    gameBall.style.left = `${left}%`;
-    gameBall.style.top = `${top}%`;
-    gameBall.style.transform = `rotate(${progress * 280}deg)`;
+    placeBall(left, top, progress * 280, 1 + Math.sin(progress * Math.PI) * 0.08);
     if (progress < 1) state.animationFrame = requestAnimationFrame(animate);
   };
 
@@ -212,8 +281,7 @@ function previewToss(toss) {
 function startSpikeAnimation() {
   const toss = currentIncomingToss();
   state.roundStartedAt = performance.now();
-  gameBall.style.left = "23%";
-  gameBall.style.top = "58%";
+  placeBall(23, 58, 0);
 
   const animate = (now) => {
     const elapsed = now - state.roundStartedAt;
@@ -221,9 +289,7 @@ function startSpikeAnimation() {
     const bounded = clamp(progress, 0, 1.08);
     const top = 58 - toss.arcHeight * 4 * bounded * (1 - bounded);
     const left = 23 + bounded * 57;
-    gameBall.style.left = `${left}%`;
-    gameBall.style.top = `${top}%`;
-    gameBall.style.transform = `rotate(${bounded * 360}deg)`;
+    placeBall(left, top, bounded * 360, 1 + Math.sin(bounded * Math.PI) * 0.09);
 
     if (progress >= 1.08) {
       recordSpike(true);
@@ -267,13 +333,16 @@ function recordSpike(autoMiss = false) {
 
   const animateHit = (now) => {
     const p = clamp((now - started) / 430, 0, 1);
-    gameBall.style.left = `${startLeft + p * 28}%`;
-    gameBall.style.top = `${startTop + p * 47}%`;
-    gameBall.style.transform = `rotate(${p * 430}deg) scale(${1 - p * 0.25})`;
+    placeBall(
+      startLeft + p * 28,
+      startTop + p * 47,
+      p * 430,
+      1 - p * 0.25,
+    );
     if (p < 1) state.animationFrame = requestAnimationFrame(animateHit);
   };
   state.animationFrame = requestAnimationFrame(animateHit);
-  window.setTimeout(advanceRound, 680);
+  scheduleForCurrentRun(advanceRound, 680);
 }
 
 function advanceRound() {
@@ -398,6 +467,10 @@ function renderFinalResult() {
 
 function resetGame() {
   stopAnimation();
+  state.runVersion += 1;
+  court.classList.remove("is-impact", "is-launching");
+  playScreen.classList.remove("toss-mode", "spike-mode");
+  particleField.replaceChildren();
   state.mode = null;
   state.actor = null;
   state.direction = null;
@@ -448,6 +521,6 @@ document.addEventListener("visibilitychange", () => {
     actionButton.disabled = true;
     showFeedback("화면으로 돌아오면 이 공을 다시 시작해요");
   } else if (!document.hidden && !screens.play.classList.contains("hidden")) {
-    window.setTimeout(startRound, 250);
+    scheduleForCurrentRun(startRound, 250);
   }
 });
