@@ -74,6 +74,7 @@ Apps in Toss의 `getAnonymousKey()`·`getTossShareLink()`·`share()`·
 - [작업 계획](docs/WORK-PLAN.md)
 - [플레이테스트 계획](docs/PLAYTEST-PLAN.md)
 - [분석 계획](docs/ANALYTICS.md)
+- [콘솔 등록 문안](docs/LAUNCH-TEXT.md)
 - [위험과 게이트](docs/RISKS-AND-GATES.md)
 - [결정 기록](docs/DECISIONS.md)
 - [공식 출처](docs/OFFICIAL-SOURCES.md)
