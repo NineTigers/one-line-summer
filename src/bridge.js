@@ -95,24 +95,31 @@ export async function tossShare(message) {
 /**
  * 분석 이벤트.
  *
- * 그림 내용이나 링크 토큰은 보내지 않는다. 어떤 행동을 했는지만 남긴다.
+ * 이벤트 사전은 `docs/ANALYTICS.md`에 있다. 그림 좌표·링크 토큰·익명
+ * 키는 절대 보내지 않는다. 무엇을 했는지와 붓이 몇 번째인지만 남긴다.
+ *
+ * `screen`은 화면 진입, `click`은 사용자가 누른 것, `event`는 누르지
+ * 않았는데 일어난 것(저장 성공, 공유 결과, 깨진 링크)에 쓴다.
  */
-export async function logScreen(name) {
+async function log(kind, name, params) {
   const sdk = await loadSdk();
   try {
-    await sdk?.Analytics?.screen?.({ log_name: name });
+    await sdk?.Analytics?.[kind]?.({ log_name: name, ...params });
   } catch {
     /* 분석 실패가 제품을 막지 않는다 */
   }
 }
 
-export async function logClick(name) {
-  const sdk = await loadSdk();
-  try {
-    await sdk?.Analytics?.click?.({ log_name: name });
-  } catch {
-    /* 분석 실패가 제품을 막지 않는다 */
-  }
+export function logScreen(name, params = {}) {
+  return log("screen", name, params);
+}
+
+export function logClick(name, params = {}) {
+  return log("click", name, params);
+}
+
+export function logEvent(name, params = {}) {
+  return log("impression", name, params);
 }
 
 /** 토스 앱 안에서 실행 중인지. 판단이 불가능하면 false. */

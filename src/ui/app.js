@@ -1,6 +1,14 @@
 import {
+  FORMAT_VERSION,
+  MAX_STROKES,
+  decodeArtwork,
+  encodeArtwork,
+  reducePoints,
+} from "../link.js";
+import {
   anonymousKey,
   logClick,
+  logEvent,
   logScreen,
   tossShare,
   tossShareLink,
@@ -8,10 +16,14 @@ import {
 
 const CANVAS_WIDTH = 720;
 const CANVAS_HEIGHT = 900;
-const FORMAT_VERSION = 5;
-const MAX_STROKES = 12;
-const MAX_POINTS = 84;
-const STORAGE_KEY = "one-line-summer-nodes-v5";
+/*
+ * 그리는 동안 담아두는 점의 상한.
+ *
+ * 링크에 실리는 점(`MAX_POINTS`)보다 넉넉해야 한다. 여기서 막으면 선이
+ * 손가락을 따라가다 멈춘다. 저장하는 순간 `reducePoints`가 줄인다.
+ */
+const MAX_DRAFT_POINTS = 240;
+const STORAGE_KEY = "one-line-summer-nodes-v6";
 const ANON_KEY_STORAGE = "one-line-summer-anon-key";
 const LINK_PARAM = "d";
 
@@ -144,6 +156,16 @@ const state = {
   toastTimer: null,
 };
 
+/**
+ * 지금 그림에 쌓인 붓의 수.
+ *
+ * 릴레이가 몇 단계까지 이어지는지가 이 제품의 핵심 질문이라, 거의
+ * 모든 이벤트에 붙인다. 그림 내용은 담기지 않는다.
+ */
+function docDepth() {
+  return state.currentDoc?.strokes.length ?? 0;
+}
+
 function randomId() {
   if (crypto.randomUUID) return crypto.randomUUID();
   return `node-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -171,7 +193,7 @@ function navigateTo(name, push = true) {
   if (push) window.history.pushState(entry, "");
   else window.history.replaceState(entry, "");
   showScreen(screens[name]);
-  logScreen(`one_line_summer_${name}`);
+  logScreen(`summer_${name}_viewed`, { depth: docDepth() });
 }
 
 function showToast(message) {
@@ -210,10 +232,7 @@ function sanitizePoint(point) {
 function sanitizeStroke(stroke, index) {
   if (!stroke || typeof stroke !== "object") return null;
   const points = Array.isArray(stroke.points)
-    ? stroke.points
-        .slice(0, MAX_POINTS)
-        .map(sanitizePoint)
-        .filter(Boolean)
+    ? stroke.points.map(sanitizePoint).filter(Boolean)
     : [];
   if (points.length < 2) return null;
   return {
@@ -223,7 +242,7 @@ function sanitizeStroke(stroke, index) {
     color: Number.isInteger(stroke.color)
       ? Math.max(0, Math.min(3, stroke.color))
       : index % 4,
-    points,
+    points: reducePoints(points),
   };
 }
 
@@ -271,31 +290,32 @@ function compactDoc(doc) {
   };
 }
 
+/**
+ * 링크 토큰과 문서 사이의 다리.
+ *
+ * 링크에는 그림만 담기므로(`src/link.js` 참고) 받는 쪽에서 식별자와
+ * 시각을 새로 만든다. 이름은 화면에 쓰지 않으므로 기본값을 준다.
+ */
 function encodeDoc(doc) {
-  const bytes = new TextEncoder().encode(JSON.stringify(compactDoc(doc)));
-  let binary = "";
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return encodeArtwork(doc);
 }
 
 function decodeDoc(token) {
-  if (!token) return null;
-  try {
-    let base64 = token.replace(/-/g, "+").replace(/_/g, "/");
-    while (base64.length % 4 !== 0) base64 += "=";
-    const binary = atob(base64);
-    const bytes = Uint8Array.from(binary, (character) =>
-      character.charCodeAt(0),
-    );
-    return sanitizeDoc(JSON.parse(new TextDecoder().decode(bytes)));
-  } catch (error) {
-    return null;
-  }
+  const artwork = decodeArtwork(token);
+  if (!artwork) return null;
+
+  const id = randomId();
+  return sanitizeDoc({
+    version: FORMAT_VERSION,
+    id,
+    rootId: id,
+    parentId: null,
+    palette: artwork.palette,
+    prompt: artwork.prompt,
+    strokes: artwork.strokes.map((stroke) => ({ ...stroke, id: randomId() })),
+    finished: false,
+    createdAt: Date.now(),
+  });
 }
 
 /**
@@ -305,14 +325,30 @@ function decodeDoc(token) {
  * deep_link_value를 거쳐 보존된다는 보장이 없어 쿼리(`?d=`)를 쓴다.
  * 어느 쪽으로 들어와도 같은 그림이 열려야 한다.
  */
+function readLinkToken() {
+  return (
+    new URLSearchParams(window.location.search).get(LINK_PARAM) ||
+    new URLSearchParams(window.location.hash.replace(/^#/, "")).get(LINK_PARAM)
+  );
+}
+
+/**
+ * 링크가 잘렸거나 알아볼 수 없으면 `null`을 돌려주고 그 사실을 남긴다.
+ * 부르는 쪽은 막힌 화면 대신 첫 화면을 보여준다.
+ */
 function readDocFromLocation() {
-  const search = new URLSearchParams(window.location.search).get(LINK_PARAM);
-  if (search) {
-    const fromSearch = decodeDoc(search);
-    if (fromSearch) return fromSearch;
+  const tokens = [
+    new URLSearchParams(window.location.search).get(LINK_PARAM),
+    new URLSearchParams(window.location.hash.replace(/^#/, "")).get(LINK_PARAM),
+  ].filter(Boolean);
+
+  for (const token of tokens) {
+    const doc = decodeDoc(token);
+    if (doc) return doc;
   }
-  const hash = window.location.hash.replace(/^#/, "");
-  return decodeDoc(new URLSearchParams(hash).get(LINK_PARAM));
+
+  if (tokens.length) logEvent("summer_link_broken");
+  return null;
 }
 
 function basePageUrl() {
@@ -667,6 +703,7 @@ function beginStroke(event) {
 
   state.drawing = true;
   state.draftPoints = [eventPoint(event)];
+  logEvent("summer_stroke_started", { depth: docDepth() });
   canvases.draw.setPointerCapture(event.pointerId);
   document.querySelector("#drawStatus").textContent =
     "손가락을 떼면 이 한 붓이 끝나요.";
@@ -678,7 +715,7 @@ function extendStroke(event) {
   const previous = state.draftPoints.at(-1);
   if (pointDistance(point, previous) < 8) return;
 
-  if (state.draftPoints.length >= MAX_POINTS) {
+  if (state.draftPoints.length >= MAX_DRAFT_POINTS) {
     state.draftPoints[state.draftPoints.length - 1] = point;
   } else {
     state.draftPoints.push(point);
@@ -727,7 +764,7 @@ function commitDraftStroke() {
     actor: state.actor,
     name: safeName(state.actorName),
     color: state.strokeColor,
-    points: state.draftPoints.slice(0, MAX_POINTS),
+    points: reducePoints(state.draftPoints),
   };
   const child = {
     ...state.currentDoc,
@@ -738,6 +775,7 @@ function commitDraftStroke() {
     createdAt: Date.now(),
   };
 
+  logEvent("summer_stroke_saved", { depth: child.strokes.length });
   state.currentDoc = child;
   state.shareDoc = child;
   state.draftPoints = [];
@@ -819,6 +857,7 @@ async function shareArtwork(doc) {
 
   try {
     const result = await shareLinkWithPlatform(doc, link);
+    logEvent("summer_toss_result", { result, depth: doc.strokes.length });
     if (result === "shared") {
       showToast("공유를 마쳤어요.");
       document.querySelector("#drawStatus").textContent =
@@ -834,6 +873,10 @@ async function shareArtwork(doc) {
     }
   } catch (error) {
     if (error?.name === "AbortError") {
+      logEvent("summer_toss_result", {
+        result: "cancelled",
+        depth: doc.strokes.length,
+      });
       document.querySelector("#drawStatus").textContent =
         "공유를 취소했어요. 다시 토스할 수 있어요.";
     } else if (await copyLink(link)) {
@@ -852,7 +895,7 @@ async function shareArtwork(doc) {
 
 async function commitAndShare() {
   if (state.sharing || !state.currentDoc) return;
-  logClick("one_line_summer_toss");
+  logClick("summer_toss_tapped", { depth: docDepth() });
   const doc = state.strokeCommitted
     ? state.shareDoc || state.currentDoc
     : commitDraftStroke();
@@ -905,12 +948,12 @@ function restoreScreen(name) {
 buildThemeOptions();
 
 document.querySelector("#startButton").addEventListener("click", () => {
-  logClick("one_line_summer_start");
+  logClick("summer_start_tapped");
   beginNew();
 });
 
 document.querySelector("#createCanvasButton").addEventListener("click", () => {
-  logClick("one_line_summer_create_canvas");
+  logClick("summer_theme_selected", { theme_key: THEMES[state.prompt].id });
   state.actor = "A";
   state.actorName = "나";
   state.currentDoc = createRootDoc();
@@ -919,7 +962,7 @@ document.querySelector("#createCanvasButton").addEventListener("click", () => {
 });
 
 document.querySelector("#acceptInviteButton").addEventListener("click", () => {
-  logClick("one_line_summer_accept_invite");
+  logClick("summer_invite_accepted", { depth: docDepth() });
   state.actorName = "다음 친구";
   renderDraw();
 });
@@ -951,5 +994,8 @@ window.addEventListener("popstate", (event) => {
 // 프래그먼트가 바뀌면서 이미 히스토리 항목이 생기므로 여기서 더 넣지 않는다.
 window.addEventListener("hashchange", () => loadFromLocation(false));
 
+logEvent("summer_entry_viewed", {
+  entry_type: readLinkToken() ? "shared" : "direct",
+});
 ensureAnonymousKey();
 loadFromLocation(false);
