@@ -51,6 +51,7 @@ python3 -m http.server 4184 --bind 127.0.0.1 --directory prototype
 
 ## 문서
 
+- [**인수인계**](docs/HANDOFF.md) — 새 세션은 이것부터 읽는다
 - [활성 제품 명세](docs/PRODUCT-SPEC.md)
 - [V5 방향 검토](docs/DIRECTION-REVIEW-V5.md)
 - [기술 계획](docs/TECHNICAL-PLAN.md)
