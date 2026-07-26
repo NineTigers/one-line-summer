@@ -11,8 +11,12 @@
   https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EA%B3%B5%EC%9C%A0/getTossShareLink.html
 - 비게임 익명 사용자 키:
   https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EB%B9%84%EA%B2%8C%EC%9E%84/getAnonymousKey.html
+- 알림 동의문:
+  https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EC%9D%B8%ED%84%B0%EB%A0%89%EC%85%98/requestNotificationAgreement.html
 - 게임 사용자 키:
   https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EA%B2%8C%EC%9E%84/getUserKeyForGame.html
+- 기존 웹 프로젝트 SDK 연동:
+  https://developers-apps-in-toss.toss.im/tutorials/webview.html
 - 분석 이벤트:
   https://developers-apps-in-toss.toss.im/analytics/logging.html
 - 핵심 지표:
@@ -25,3 +29,5 @@
   https://developers-apps-in-toss.toss.im/development/deploy.html
 - UI/UX 가이드:
   https://developers-apps-in-toss.toss.im/design/consumer-ux-guide.html
+- 미니앱 브랜딩 가이드:
+  https://developers-apps-in-toss.toss.im/design/miniapp-branding-guide.html

@@ -1,7 +1,10 @@
 # 여름 토스 릴레이 체험 점검표
 
+> 상태: 대체된 V3 릴레이 비교 기준. 활성 V4 제품 검증에는
+> `docs/PLAYTEST-PLAN.md`를 사용한다.
+
 대상: `prototype/` (v3 릴레이 구현)
-기준 문서: `docs/CONCEPT-V3-SUMMER-RELAY.md`
+역사 기준 문서: `docs/CONCEPT-V3-SUMMER-RELAY.md`
 
 ```bash
 python3 -m http.server 4184 --directory prototype
