@@ -413,43 +413,6 @@ li {
   cursor: not-allowed;
 }
 
-.promise-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 9px;
-  padding: 0;
-  margin: 25px 0 0;
-  list-style: none;
-}
-
-.promise-list li {
-  display: flex;
-  min-height: 94px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 13px 12px;
-  font-size: 11px;
-  background: rgba(255, 255, 255, 0.48);
-  border: 1px solid rgba(21, 56, 58, 0.08);
-  border-radius: 18px;
-  box-shadow: 0 10px 25px rgba(34, 79, 78, 0.05);
-  backdrop-filter: blur(14px);
-}
-
-.promise-list strong {
-  font-size: 12px;
-  line-height: 1.25;
-  color: var(--ink);
-}
-
-.promise-list span {
-  line-height: 1.4;
-  color: var(--muted);
-  text-align: left;
-}
-
 .choice-block {
   padding: 0;
   margin: 0 0 24px;
@@ -893,36 +856,6 @@ li {
   font-size: 14.5px;
 }
 
-.handoff-summary {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.handoff-summary div {
-  display: flex;
-  min-height: 77px;
-  flex-direction: column;
-  justify-content: center;
-  padding: 13px 14px;
-  background: rgba(255, 255, 255, 0.54);
-  border: 1px solid rgba(21, 56, 58, 0.08);
-  border-radius: 18px;
-  box-shadow: 0 9px 22px rgba(34, 79, 78, 0.05);
-  backdrop-filter: blur(14px);
-}
-
-.handoff-summary span {
-  font-size: 10.5px;
-  color: var(--muted);
-}
-
-.handoff-summary strong {
-  margin-top: 4px;
-  font-size: 19px;
-}
-
 .share-box {
   margin-top: 17px;
   padding: 16px;
@@ -930,6 +863,12 @@ li {
   border: 1px solid rgba(129, 113, 201, 0.18);
   border-radius: 22px;
   box-shadow: 0 16px 34px rgba(81, 65, 137, 0.1);
+}
+
+.handoff-status {
+  min-height: 20px;
+  margin-top: 10px;
+  text-align: center;
 }
 
 .share-title {
@@ -1140,23 +1079,6 @@ li {
 
   .lead {
     font-size: 13.5px;
-  }
-
-  .promise-list {
-    gap: 7px;
-  }
-
-  .promise-list li {
-    min-height: 90px;
-    padding: 11px 9px;
-  }
-
-  .promise-list strong {
-    font-size: 11px;
-  }
-
-  .promise-list span {
-    font-size: 9.5px;
   }
 
   .palette-card {

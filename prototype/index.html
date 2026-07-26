@@ -7,12 +7,12 @@
     <title>한 줄 여름</title>
     <meta
       name="description"
-      content="친구가 남긴 선 끝에서 시작해, 한 줄로 서로 다른 여름을 완성해요."
+      content="여름 배경에 한 붓을 그리고 링크로 친구에게 토스해요."
     />
     <meta property="og:title" content="한 줄 여름" />
     <meta
       property="og:description"
-      content="같은 선에서 시작해도 우리마다 다른 여름이 돼요."
+      content="한 붓 그리고, 링크로 토스하고, 친구가 한 붓 더해요."
     />
     <meta property="og:type" content="website" />
     <link
@@ -45,7 +45,7 @@
       as="image"
       href="./assets/theme-summer-fireworks.jpg"
     />
-    <link rel="stylesheet" href="./styles.css?v=10" />
+    <link rel="stylesheet" href="./styles.css?v=11" />
   </head>
   <body>
     <main class="app-shell">
@@ -60,9 +60,6 @@
           <span>한 줄 여름</span>
           <span class="prototype-badge">SUMMER 26</span>
         </button>
-        <button class="text-button" id="restartButton" type="button">
-          새로 시작
-        </button>
       </header>
 
       <section class="screen" id="homeScreen">
@@ -72,8 +69,8 @@
           우리마다 다른 여름
         </h1>
         <p class="lead">
-          친구가 남긴 선 끝에서 한 획을 이어주세요. 중간의 어느 선이든
-          다시 건네면, 거기서 새로운 여름이 갈라져 나와요.
+          여름 배경에 한 붓을 그리고 링크로 친구에게 토스하세요.
+          친구도 원하는 곳에 한 붓을 더해요.
         </p>
 
         <div class="hero-art" aria-hidden="true">
@@ -99,15 +96,6 @@
         <button class="primary-button" id="startButton" type="button">
           첫 선 그리기
         </button>
-        <button class="secondary-button" id="exampleButton" type="button">
-          같은 시작, 다른 결과 먼저 보기
-        </button>
-
-        <ul class="promise-list" aria-label="서비스 특징">
-          <li><strong>한 번에 한 획</strong><span>어디서든 그려요</span></li>
-          <li><strong>여러 갈래</strong><span>중간 선을 다시 공유해요</span></li>
-          <li><strong>함께 만든 흔적</strong><span>그려진 순서로 다시 봐요</span></li>
-        </ul>
       </section>
 
       <section class="screen hidden" id="setupScreen">
@@ -142,17 +130,13 @@
           ></canvas>
         </div>
         <div class="branch-notice">
-          <span class="branch-icon" aria-hidden="true">⑂</span>
+          <span class="branch-icon" aria-hidden="true">↗</span>
           <p>
-            이 링크를 여러 사람이 열면 같은 선에서 각자의 그림이
-            시작돼요.
+            친구의 그림 위에 한 붓만 더한 뒤 다시 링크로 토스해요.
           </p>
         </div>
         <button class="primary-button" id="acceptInviteButton" type="button">
           바로 이어 그리기
-        </button>
-        <button class="text-link" id="inviteHistoryButton" type="button">
-          지금까지 선의 흐름 보기
         </button>
       </section>
 
@@ -202,9 +186,9 @@
       </section>
 
       <section class="screen hidden" id="handoffScreen">
-        <p class="eyebrow" id="handoffEyebrow">한 획이 이어졌어요</p>
+        <p class="eyebrow" id="handoffEyebrow">한 붓 완성</p>
         <h1 class="screen-title" id="handoffTitle">
-          이 선을 어디로<br />건네볼까요?
+          이 한 붓을 친구에게<br />토스해요
         </h1>
         <div class="canvas-card canvas-card-preview">
           <canvas
@@ -216,127 +200,24 @@
           ></canvas>
         </div>
 
-        <div class="handoff-summary">
-          <div>
-            <span>이어진 선</span>
-            <strong id="strokeCount">1개</strong>
-          </div>
-          <div>
-            <span>현재 가지</span>
-            <strong id="branchCount">1개</strong>
-          </div>
-        </div>
-
         <button class="primary-button" id="makeShareLinkButton" type="button">
-          링크로 다른 사람에게 토스하기
+          링크 복사해 토스하기
         </button>
-        <button class="secondary-button" id="localContinueButton" type="button">
-          이 폰을 건네 바로 이어 그리기
-        </button>
-        <button class="secondary-button" id="historyButton" type="button">
-          중간 선을 골라 새 가지 만들기
-        </button>
-        <button class="text-link" id="finishButton" type="button" disabled>
-          두 사람이 두 번씩 그리면 완성할 수 있어요
-        </button>
+        <p class="field-note handoff-status" id="handoffStatus" role="status" aria-live="polite"></p>
 
         <div class="share-box hidden" id="shareBox">
-          <p class="share-title">이 링크에서 새로운 가지가 시작돼요</p>
+          <p class="share-title">자동 복사가 되지 않았어요</p>
           <div class="share-row">
             <input class="text-input" id="shareLink" readonly aria-label="공유 링크" />
             <button class="copy-button" id="copyButton" type="button">복사</button>
           </div>
-          <button class="small-button" id="openShareLinkButton" type="button">
-            새 탭에서 받은 사람 화면 열기
-          </button>
           <p class="field-note" id="copyStatus" role="status" aria-live="polite"></p>
         </div>
-      </section>
-
-      <section class="screen hidden" id="historyScreen">
-        <p class="eyebrow">선의 흐름</p>
-        <h1 class="screen-title">어느 순간에서<br />갈라져 볼까요?</h1>
-        <p class="lead compact">
-          중간의 한 획을 고르고 같은 링크를 여러 사람에게 보내보세요.
-        </p>
-
-        <div
-          class="history-list"
-          id="historyList"
-          role="group"
-          aria-label="공유할 중간 단계"
-        ></div>
-
-        <div class="canvas-card history-preview-card">
-          <canvas
-            class="art-canvas"
-            id="historyCanvas"
-            width="720"
-            height="900"
-            aria-label="선택한 중간 그림"
-          ></canvas>
-        </div>
-        <p class="snapshot-caption" id="snapshotCaption"></p>
-        <button class="primary-button" id="shareSnapshotButton" type="button">
-          이 순간을 여러 사람에게 보내기
-        </button>
-        <button class="secondary-button hidden" id="compareBranchesButton" type="button">
-          여기서 갈라진 결과 비교하기
-        </button>
-        <button class="text-link" id="backToHandoffButton" type="button">
-          현재 그림으로 돌아가기
-        </button>
-      </section>
-
-      <section class="screen hidden" id="compareScreen">
-        <p class="eyebrow">같은 시작, 다른 여름</p>
-        <h1 class="screen-title" id="compareTitle">
-          한 줄이 이렇게<br />다르게 자랐어요
-        </h1>
-        <p class="lead compact" id="compareLead">
-          어느 쪽이 정답인지는 없어요. 같은 시작이 다른 사람을 만나며
-          달라지는 게 이 그림의 핵심이에요.
-        </p>
-        <div class="compare-grid" id="compareGrid"></div>
-        <button class="primary-button" id="compareStartButton" type="button">
-          나도 첫 선 만들기
-        </button>
-        <button class="text-link hidden" id="backToHistoryButton" type="button">
-          선의 흐름으로 돌아가기
-        </button>
-      </section>
-
-      <section class="screen final-screen hidden" id="finalScreen">
-        <p class="eyebrow">우리의 한 줄 여름</p>
-        <h1 class="screen-title">두 사람의 선이<br />한 장에 이어졌어요</h1>
-        <div class="canvas-card final-canvas-card">
-          <canvas
-            class="art-canvas"
-            id="finalCanvas"
-            width="720"
-            height="900"
-            aria-label="완성된 한 줄 여름 그림"
-          ></canvas>
-          <span class="replay-badge" id="replayBadge">다시 그리는 중</span>
-        </div>
-        <p class="final-caption" id="finalCaption"></p>
-        <button class="primary-button" id="replayButton" type="button">
-          선이 만난 순서 다시 보기
-        </button>
-        <button class="secondary-button" id="saveButton" type="button">
-          그림 PNG로 저장하기
-        </button>
-        <button class="secondary-button" id="finalHistoryButton" type="button">
-          중간 선에서 다른 결과 만들기
-        </button>
-        <button class="text-link" id="finalNewButton" type="button">
-          새 한 줄 시작하기
-        </button>
       </section>
 
       <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
     </main>
 
-    <script src="./app.js?v=10"></script>
+    <script src="./app.js?v=11"></script>
   </body>
 </html>

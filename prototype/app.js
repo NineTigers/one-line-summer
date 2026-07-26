@@ -120,17 +120,12 @@ const screens = {
   invite: document.querySelector("#inviteScreen"),
   draw: document.querySelector("#drawScreen"),
   handoff: document.querySelector("#handoffScreen"),
-  history: document.querySelector("#historyScreen"),
-  compare: document.querySelector("#compareScreen"),
-  final: document.querySelector("#finalScreen"),
 };
 
 const canvases = {
   draw: document.querySelector("#drawCanvas"),
   invite: document.querySelector("#inviteCanvas"),
   handoff: document.querySelector("#handoffCanvas"),
-  history: document.querySelector("#historyCanvas"),
-  final: document.querySelector("#finalCanvas"),
 };
 
 const state = {
@@ -790,38 +785,9 @@ function branchTips(parentDoc) {
 }
 
 function renderHandoff() {
-  const count = state.currentDoc.strokes.length;
   renderArtwork(canvases.handoff, state.currentDoc);
-  document.querySelector("#handoffEyebrow").textContent =
-    `${safeName(state.actorName)}의 선이 이어졌어요`;
-  document.querySelector("#handoffTitle").innerHTML =
-    count < 4
-      ? "이 선을 어디로<br />건네볼까요?"
-      : "완성할까요,<br />더 멀리 건넬까요?";
-  document.querySelector("#strokeCount").textContent = `${count}개`;
-
-  const siblings =
-    state.currentDoc.parentId === null
-      ? 1
-      : Math.max(
-          1,
-          directChildren(
-            state.currentDoc.parentId,
-            state.currentDoc.rootId,
-          ).length,
-        );
-  document.querySelector("#branchCount").textContent = `${siblings}개`;
-
-  const canFinish =
-    count >= 4 &&
-    new Set(state.currentDoc.strokes.map((stroke) => stroke.actor)).size >= 2;
-  const finishButton = document.querySelector("#finishButton");
-  finishButton.disabled = !canFinish;
-  finishButton.textContent = canFinish
-    ? "이 그림 완성하기"
-    : "두 사람이 두 번씩 그리면 완성할 수 있어요";
-
   document.querySelector("#shareBox").classList.add("hidden");
+  document.querySelector("#handoffStatus").textContent = "";
   document.querySelector("#copyStatus").textContent = "";
   showScreen(screens.handoff);
 }
@@ -1041,7 +1007,7 @@ function openShareBox(doc) {
   document.querySelector("#shareLink").value = link;
   document.querySelector("#shareBox").classList.remove("hidden");
   document.querySelector("#copyStatus").textContent =
-    "같은 링크를 여러 사람에게 보내면 각각 새 가지가 생겨요.";
+    "링크를 길게 눌러 복사해 친구에게 보내주세요.";
   document.querySelector("#shareBox").scrollIntoView({
     block: "nearest",
     behavior: prefersReducedMotion() ? "auto" : "smooth",
@@ -1052,7 +1018,7 @@ async function copyLink(doc) {
   const link = docLink(doc);
   try {
     await navigator.clipboard.writeText(link);
-    showToast("중간 선 링크를 복사했어요.");
+    showToast("토스 링크를 복사했어요.");
     return true;
   } catch (error) {
     return false;
@@ -1167,11 +1133,7 @@ function loadFromLocation() {
   state.names.B = actorNameFromDoc(incomingDoc, "B");
   saveNode(incomingDoc);
 
-  if (incomingDoc.finished) {
-    renderFinal();
-  } else {
-    renderInvite();
-  }
+  renderInvite();
 }
 
 function eventPoint(event) {
@@ -1279,12 +1241,7 @@ function commitDraftStroke() {
 buildThemeOptions();
 
 document.querySelector("#startButton").addEventListener("click", beginNew);
-document.querySelector("#compareStartButton").addEventListener("click", beginNew);
-document.querySelector("#exampleButton").addEventListener("click", () => {
-  renderCompare(sampleDocs(), false);
-});
 document.querySelector("#homeButton").addEventListener("click", returnHome);
-document.querySelector("#restartButton").addEventListener("click", beginNew);
 
 document.querySelector("#createCanvasButton").addEventListener("click", () => {
   state.actor = "A";
@@ -1301,10 +1258,6 @@ document.querySelector("#acceptInviteButton").addEventListener("click", () => {
   renderDraw();
 });
 
-document
-  .querySelector("#inviteHistoryButton")
-  .addEventListener("click", renderHistory);
-
 canvases.draw.addEventListener("pointerdown", beginStroke);
 canvases.draw.addEventListener("pointermove", extendStroke);
 canvases.draw.addEventListener("pointerup", endStroke);
@@ -1317,67 +1270,26 @@ document
 
 document
   .querySelector("#makeShareLinkButton")
-  .addEventListener("click", () => openShareBox(state.currentDoc));
+  .addEventListener("click", async () => {
+    const copied = await copyLink(state.currentDoc);
+    document.querySelector("#handoffStatus").textContent = copied
+      ? "링크를 복사했어요. 친구에게 보내주세요."
+      : "자동 복사가 되지 않아 링크를 직접 보여드려요.";
+    document.querySelector("#shareBox").classList.toggle("hidden", copied);
+    if (!copied) {
+      openShareBox(state.currentDoc);
+      document.querySelector("#shareLink").select();
+    }
+  });
 
 document.querySelector("#copyButton").addEventListener("click", async () => {
   const doc = state.shareDoc || state.currentDoc;
   const copied = await copyLink(doc);
   document.querySelector("#copyStatus").textContent = copied
-    ? "링크를 복사했어요. 두 사람에게 보내면 두 갈래가 생겨요."
-    : "아래 링크를 길게 눌러 복사해 주세요.";
+    ? "링크를 복사했어요. 친구에게 보내주세요."
+    : "링크를 길게 눌러 복사해 주세요.";
   if (!copied) document.querySelector("#shareLink").select();
 });
-
-document
-  .querySelector("#openShareLinkButton")
-  .addEventListener("click", () => {
-    const doc = state.shareDoc || state.currentDoc;
-    window.open(docLink(doc), "_blank", "noopener,noreferrer");
-  });
-
-document.querySelector("#localContinueButton").addEventListener("click", () => {
-  state.actor = nextActor(state.currentDoc);
-  state.actorName =
-    state.names[state.actor] || actorNameFromDoc(state.currentDoc, state.actor);
-  renderDraw();
-});
-
-document.querySelector("#historyButton").addEventListener("click", renderHistory);
-document.querySelector("#finishButton").addEventListener("click", finishCurrentArtwork);
-
-document
-  .querySelector("#shareSnapshotButton")
-  .addEventListener("click", async () => {
-    const doc = state.selectedHistoryDoc;
-    const copied = await copyLink(doc);
-    if (copied) {
-      showToast("같은 중간 선 링크를 여러 사람에게 보내보세요.");
-    } else {
-      window.open(docLink(doc), "_blank", "noopener,noreferrer");
-      showToast("새 탭에서 공유할 중간 선을 열었어요.");
-    }
-  });
-
-document
-  .querySelector("#compareBranchesButton")
-  .addEventListener("click", () => {
-    const tips = branchTips(state.selectedHistoryDoc);
-    renderCompare(tips, true);
-  });
-
-document
-  .querySelector("#backToHandoffButton")
-  .addEventListener("click", renderHandoff);
-document
-  .querySelector("#backToHistoryButton")
-  .addEventListener("click", renderHistory);
-
-document.querySelector("#replayButton").addEventListener("click", playReplay);
-document.querySelector("#saveButton").addEventListener("click", saveArtwork);
-document
-  .querySelector("#finalHistoryButton")
-  .addEventListener("click", renderHistory);
-document.querySelector("#finalNewButton").addEventListener("click", beginNew);
 
 window.addEventListener("hashchange", loadFromLocation);
 
