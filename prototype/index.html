@@ -3,75 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#fff8e8" />
+    <meta name="theme-color" content="#ffffff" />
     <title>한 줄 여름</title>
     <meta
       name="description"
-      content="여름 배경에 한 붓을 그리고 링크로 친구에게 토스해요."
+      content="친구와 한 붓씩 주고받으며 우리만의 여름 그림을 완성해요."
     />
     <meta property="og:title" content="한 줄 여름" />
     <meta
       property="og:description"
-      content="한 붓 그리고, 링크로 토스하고, 친구가 한 붓 더해요."
+      content="여름 배경에 한 붓을 더해 친구에게 토스해요."
     />
     <meta property="og:type" content="website" />
-    <link
-      rel="preload"
-      as="image"
-      href="./assets/theme-sunset-beach.jpg"
-    />
-    <link
-      rel="preload"
-      as="image"
-      href="./assets/theme-bingsu-shop.jpg"
-    />
-    <link
-      rel="preload"
-      as="image"
-      href="./assets/theme-han-river-picnic.jpg"
-    />
-    <link
-      rel="preload"
-      as="image"
-      href="./assets/theme-green-valley.jpg"
-    />
-    <link
-      rel="preload"
-      as="image"
-      href="./assets/theme-monsoon-window.jpg"
-    />
-    <link
-      rel="preload"
-      as="image"
-      href="./assets/theme-summer-fireworks.jpg"
-    />
-    <link rel="stylesheet" href="./styles.css?v=11" />
+    <link rel="preload" as="image" href="./assets/theme-sunset-beach.jpg" />
+    <link rel="stylesheet" href="./styles.css?v=12" />
   </head>
   <body>
     <main class="app-shell">
-      <header class="topbar">
-        <button
-          class="brand-button"
-          id="homeButton"
-          type="button"
-          aria-label="한 줄 여름 홈"
-        >
-          <span class="line-mark" aria-hidden="true"></span>
-          <span>한 줄 여름</span>
-          <span class="prototype-badge">SUMMER 26</span>
-        </button>
-      </header>
-
-      <section class="screen" id="homeScreen">
-        <p class="eyebrow">2026 SUMMER TOGETHER</p>
-        <h1 class="home-title">
-          같은 선에서 시작해도<br />
-          우리마다 다른 여름
-        </h1>
-        <p class="lead">
-          여름 배경에 한 붓을 그리고 링크로 친구에게 토스하세요.
-          친구도 원하는 곳에 한 붓을 더해요.
-        </p>
+      <section class="screen home-screen" id="homeScreen">
+        <div class="home-copy">
+          <p class="section-label">함께 그리는 여름</p>
+          <h1 class="home-title">
+            친구와 한 붓씩<br />
+            우리 여름을 그려요
+          </h1>
+          <p class="lead">
+            여름 배경에 한 붓을 더해 친구에게 보내요.<br />
+            친구가 다시 한 붓을 이어줘요.
+          </p>
+        </div>
 
         <div class="hero-art" aria-hidden="true">
           <img
@@ -80,77 +40,73 @@
             width="720"
             height="900"
           />
-          <svg class="hero-stroke" viewBox="0 0 360 240">
+          <svg class="hero-stroke" viewBox="0 0 360 270">
             <path
-              d="M48 112 C88 82 117 135 160 118 C205 100 220 151 267 131 C293 120 311 135 327 153"
+              d="M36 122 C82 88 116 145 160 122 C207 98 224 158 270 133 C300 117 319 137 334 157"
               fill="none"
               stroke="#ef6351"
               stroke-linecap="round"
               stroke-width="8"
             />
           </svg>
-          <div class="hero-label label-one">밑그림 위에</div>
-          <div class="hero-label label-three">한 줄씩 함께</div>
         </div>
 
         <button class="primary-button" id="startButton" type="button">
-          첫 선 그리기
+          첫 한 붓 그리기
         </button>
       </section>
 
-      <section class="screen hidden" id="setupScreen">
-        <p class="eyebrow">배경 고르기</p>
-        <h1 class="screen-title">어떤 여름에<br />그려볼까요?</h1>
-        <p class="lead compact">
-          마음에 드는 밑그림 하나만 고르면 바로 그릴 수 있어요.
-        </p>
+      <section class="screen setup-screen hidden" id="setupScreen">
+        <div class="screen-copy">
+          <p class="section-label">배경 선택</p>
+          <h1 class="screen-title">그릴 배경을 골라요</h1>
+          <p class="lead compact">마음에 드는 여름 하나를 선택해 주세요.</p>
+        </div>
 
-        <fieldset class="choice-block theme-choice-block">
-          <legend>테마 밑그림</legend>
+        <fieldset class="choice-block">
+          <legend class="sr-only">여름 배경 선택</legend>
           <div class="theme-grid" id="themeGroup"></div>
         </fieldset>
 
-        <button class="primary-button" id="createCanvasButton" type="button">
-          이 배경에 그리기
-        </button>
+        <div class="bottom-cta">
+          <button class="primary-button" id="createCanvasButton" type="button">
+            선셋 비치에 그리기
+          </button>
+        </div>
       </section>
 
-      <section class="screen hidden" id="inviteScreen">
-        <p class="eyebrow" id="inviteEyebrow">한 줄이 도착했어요</p>
-        <h1 class="screen-title" id="inviteTitle">
-          친구가 남긴 끝에서<br />내 여름을 이어주세요
-        </h1>
+      <section class="screen invite-screen hidden" id="inviteScreen">
+        <div class="screen-copy">
+          <p class="section-label" id="inviteEyebrow">한 붓이 도착했어요</p>
+          <h1 class="screen-title" id="inviteTitle">
+            친구가 한 붓을 보냈어요<br />
+            원하는 곳에 한 붓을 더해요
+          </h1>
+        </div>
+
         <div class="canvas-card canvas-card-preview">
           <canvas
             class="art-canvas"
             id="inviteCanvas"
             width="720"
             height="900"
-            aria-label="지금까지 이어진 그림"
+            aria-label="친구에게 받은 여름 그림"
           ></canvas>
         </div>
-        <div class="branch-notice">
-          <span class="branch-icon" aria-hidden="true">↗</span>
-          <p>
-            친구의 그림 위에 한 붓만 더한 뒤 다시 링크로 토스해요.
-          </p>
-        </div>
+
         <button class="primary-button" id="acceptInviteButton" type="button">
-          바로 이어 그리기
+          한 붓 더하기
         </button>
       </section>
 
       <section class="screen draw-screen hidden" id="drawScreen">
         <div class="draw-heading">
-          <div>
-            <p class="eyebrow" id="drawEyebrow">선셋 비치</p>
-            <h1 class="draw-title" id="drawTitle">원하는 곳에 한 붓 그려요</h1>
-          </div>
-          <span class="turn-chip" id="turnChip">1번째 선</span>
+          <p class="section-label" id="drawEyebrow">선셋 비치</p>
+          <h1 class="draw-title" id="drawTitle">원하는 곳에 한 붓 그려요</h1>
+          <p class="draw-guide" id="drawGuide">
+            손가락을 떼기 전까지 한 번에 그려요.
+          </p>
         </div>
-        <p class="draw-guide" id="drawGuide">
-          손가락을 떼기 전까지 한 번에 그려요.
-        </p>
 
         <div class="canvas-card canvas-card-draw" id="drawCanvasCard">
           <canvas
@@ -158,7 +114,8 @@
             id="drawCanvas"
             width="720"
             height="900"
-            aria-label="한 줄 이어그리기 캔버스"
+            aria-label="한 붓을 더하는 여름 그림"
+            aria-describedby="drawStatus"
           ></canvas>
         </div>
 
@@ -174,50 +131,42 @@
 
         <div class="drawing-actions">
           <button class="tool-button" id="undoButton" type="button" disabled>
-            지우고 다시
+            다시 그리기
           </button>
-          <button class="primary-button inline-primary" id="commitButton" type="button" disabled>
-            이 한 붓 토스하기
+          <button
+            class="primary-button inline-primary"
+            id="commitButton"
+            type="button"
+            disabled
+          >
+            친구에게 토스하기
           </button>
         </div>
+
         <p class="helper" id="drawStatus" role="status" aria-live="polite">
           캔버스 어디서든 시작할 수 있어요.
         </p>
-      </section>
 
-      <section class="screen hidden" id="handoffScreen">
-        <p class="eyebrow" id="handoffEyebrow">한 붓 완성</p>
-        <h1 class="screen-title" id="handoffTitle">
-          이 한 붓을 친구에게<br />토스해요
-        </h1>
-        <div class="canvas-card canvas-card-preview">
-          <canvas
-            class="art-canvas"
-            id="handoffCanvas"
-            width="720"
-            height="900"
-            aria-label="내 선이 추가된 그림"
-          ></canvas>
-        </div>
-
-        <button class="primary-button" id="makeShareLinkButton" type="button">
-          링크 복사해 토스하기
-        </button>
-        <p class="field-note handoff-status" id="handoffStatus" role="status" aria-live="polite"></p>
-
-        <div class="share-box hidden" id="shareBox">
-          <p class="share-title">자동 복사가 되지 않았어요</p>
+        <div class="share-fallback hidden" id="shareFallback">
+          <p class="share-title">링크를 직접 복사할 수 있어요</p>
           <div class="share-row">
-            <input class="text-input" id="shareLink" readonly aria-label="공유 링크" />
-            <button class="copy-button" id="copyButton" type="button">복사</button>
+            <input
+              class="text-input"
+              id="shareLink"
+              readonly
+              aria-label="공유 링크"
+            />
+            <button class="copy-button" id="copyButton" type="button">
+              복사
+            </button>
           </div>
-          <p class="field-note" id="copyStatus" role="status" aria-live="polite"></p>
+          <p class="helper" id="copyStatus" role="status" aria-live="polite"></p>
         </div>
       </section>
 
       <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
     </main>
 
-    <script src="./app.js?v=11"></script>
+    <script src="./app.js?v=12"></script>
   </body>
 </html>
