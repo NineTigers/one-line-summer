@@ -39,36 +39,31 @@ const PALETTES = [
   },
 ];
 
-const PROMPTS = [
+const THEMES = [
   {
-    id: "wave",
-    name: "바다 냄새",
-    note: "파도처럼 이어보기",
-    glyph: "⌁",
+    id: "sunset-beach",
+    name: "선셋 비치",
+    note: "노을이 내려앉은 해변",
+    asset: "./assets/theme-sunset-beach.jpg",
+    palette: 2,
     seed: [205, 190],
   },
   {
-    id: "rain",
-    name: "소나기 소리",
-    note: "빗방울처럼 이어보기",
-    glyph: "╱",
-    seed: [510, 190],
-  },
-  {
-    id: "night",
-    name: "여름밤 공기",
-    note: "느리게 이어보기",
-    glyph: "☾",
-    seed: [190, 680],
-  },
-  {
-    id: "free",
-    name: "아무 말 없는 여름",
-    note: "마음 가는 대로",
-    glyph: "✳",
-    seed: [360, 430],
+    id: "bingsu-shop",
+    name: "여름 빙수집",
+    note: "햇살을 피해 들어온 오후",
+    asset: "./assets/theme-bingsu-shop.jpg",
+    palette: 0,
+    seed: [360, 500],
   },
 ];
+
+const THEME_IMAGES = THEMES.map((theme) => {
+  const image = new Image();
+  image.decoding = "async";
+  image.src = theme.asset;
+  return image;
+});
 
 const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 const forcedReducedMotion =
@@ -107,8 +102,9 @@ const state = {
   actor: "A",
   actorName: "여름 친구",
   names: { A: "", B: "" },
-  palette: 0,
+  palette: THEMES[0].palette,
   prompt: 0,
+  strokeColor: 0,
   draftPoints: [],
   drawing: false,
   selectedHistoryCount: 0,
@@ -128,6 +124,8 @@ function showScreen(target) {
   Object.values(screens).forEach((screen) => {
     screen.classList.toggle("hidden", screen !== target);
   });
+  const shell = document.querySelector(".app-shell");
+  shell.scrollTop = 0;
   window.scrollTo({
     top: 0,
     behavior: prefersReducedMotion() ? "auto" : "smooth",
@@ -226,7 +224,7 @@ function sanitizeDoc(doc) {
       ? Math.max(0, Math.min(PALETTES.length - 1, doc.palette))
       : 0,
     prompt: Number.isInteger(doc.prompt)
-      ? Math.max(0, Math.min(PROMPTS.length - 1, doc.prompt))
+      ? Math.max(0, Math.min(THEMES.length - 1, doc.prompt))
       : 0,
     strokes,
     finished: Boolean(doc.finished),
@@ -314,7 +312,7 @@ function nodesForRoot(rootId) {
 }
 
 function seedPoint(doc) {
-  const [x, y] = PROMPTS[doc.prompt].seed;
+  const [x, y] = THEMES[doc.prompt].seed;
   return [Math.round((x / CANVAS_WIDTH) * 1000), Math.round((y / CANVAS_HEIGHT) * 1000)];
 }
 
@@ -538,7 +536,7 @@ function drawSunUnderlay(context, tone) {
 
 function drawSceneUnderlay(context, doc) {
   const palette = PALETTES[doc.palette];
-  const prompt = PROMPTS[doc.prompt];
+  const prompt = THEMES[doc.prompt];
   const tone = palette.dark ? "#f6f2ff" : "#285f63";
   context.save();
   context.globalAlpha = palette.dark ? 0.2 : 0.15;
@@ -555,52 +553,52 @@ function drawSceneUnderlay(context, doc) {
 
 function paintBackground(context, doc) {
   const palette = PALETTES[doc.palette];
-  const gradient = context.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-  gradient.addColorStop(0, palette.background[0]);
-  gradient.addColorStop(1, palette.background[1]);
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  const themeIndex = Math.max(0, Math.min(THEMES.length - 1, doc.prompt));
+  const themeImage = THEME_IMAGES[themeIndex];
+  const ready = themeImage.complete && themeImage.naturalWidth > 0;
 
-  context.save();
-  context.globalAlpha = palette.dark ? 0.08 : 0.055;
-  context.strokeStyle = palette.dark ? "#ffffff" : "#17363a";
-  context.lineWidth = 1.5;
-  for (let x = 80; x < CANVAS_WIDTH; x += 92) {
-    context.beginPath();
-    context.moveTo(x, 0);
-    context.lineTo(x - 60, CANVAS_HEIGHT);
-    context.stroke();
+  if (ready) {
+    context.drawImage(themeImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  } else {
+    const gradient = context.createLinearGradient(
+      0,
+      0,
+      CANVAS_WIDTH,
+      CANVAS_HEIGHT,
+    );
+    gradient.addColorStop(0, palette.background[0]);
+    gradient.addColorStop(1, palette.background[1]);
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   }
-  context.restore();
-
-  drawSceneUnderlay(context, doc);
 
   const [seedX, seedY] = toCanvasPoint(seedPoint(doc));
   context.save();
-  context.fillStyle = palette.dark ? "#fff0a8" : "#ffcc55";
+  context.shadowColor = "rgba(21, 56, 58, 0.2)";
+  context.shadowBlur = 14;
+  context.fillStyle = "#fffdf7";
   context.beginPath();
-  context.arc(seedX, seedY, 20, 0, Math.PI * 2);
+  context.arc(seedX, seedY, 17, 0, Math.PI * 2);
   context.fill();
   context.strokeStyle = "#17363a";
   context.lineWidth = 4;
   context.stroke();
   context.restore();
-
-  context.save();
-  context.fillStyle = palette.dark
-    ? "rgba(255,255,255,0.72)"
-    : "rgba(23,54,58,0.6)";
-  context.font = "800 21px sans-serif";
-  context.fillText("한 줄 여름", 36, CANVAS_HEIGHT - 54);
-  context.font = "650 16px sans-serif";
-  context.fillText(PROMPTS[doc.prompt].name, 36, CANVAS_HEIGHT - 29);
-  context.restore();
+  return ready;
 }
 
 function renderArtwork(canvas, doc, options = {}) {
   const context = canvas.getContext("2d");
   context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-  paintBackground(context, doc);
+  const backgroundReady = paintBackground(context, doc);
+  if (!backgroundReady) {
+    const themeImage = THEME_IMAGES[doc.prompt] || THEME_IMAGES[0];
+    themeImage.addEventListener(
+      "load",
+      () => renderArtwork(canvas, doc, options),
+      { once: true },
+    );
+  }
 
   const palette = PALETTES[doc.palette];
   const strokeLimit =
@@ -613,7 +611,12 @@ function renderArtwork(canvas, doc, options = {}) {
   });
 
   if (options.draftPoints?.length > 1) {
-    const colorIndex = doc.strokes.length % palette.strokes.length;
+    const colorIndex = Number.isInteger(options.draftColorIndex)
+      ? Math.max(
+          0,
+          Math.min(palette.strokes.length - 1, options.draftColorIndex),
+        )
+      : doc.strokes.length % palette.strokes.length;
     drawSmoothLine(
       context,
       options.draftPoints,
@@ -645,70 +648,69 @@ function updateEndpointGuide() {
   guide.classList.toggle("hidden", state.drawing);
 }
 
-function buildPaletteOptions() {
-  const group = document.querySelector("#paletteGroup");
+function buildThemeOptions() {
+  const group = document.querySelector("#themeGroup");
   group.replaceChildren();
-  PALETTES.forEach((palette, index) => {
+  THEMES.forEach((theme, index) => {
     const label = document.createElement("label");
-    label.className = "palette-option";
+    label.className = "theme-option";
 
     const input = document.createElement("input");
     input.type = "radio";
-    input.name = "palette";
+    input.name = "theme";
     input.value = String(index);
-    input.checked = index === state.palette;
-    input.setAttribute("aria-label", `${palette.name}, ${palette.note}`);
+    input.checked = index === state.prompt;
+    input.setAttribute("aria-label", `${theme.name}, ${theme.note}`);
     input.addEventListener("change", () => {
-      state.palette = index;
+      state.prompt = index;
+      state.palette = theme.palette;
     });
 
     const card = document.createElement("span");
-    card.className = `palette-card${palette.dark ? " is-dark" : ""}`;
-    card.style.background = `linear-gradient(135deg, ${palette.background[0]}, ${palette.background[1]})`;
+    card.className = "theme-card";
+    const image = document.createElement("img");
+    image.src = theme.asset;
+    image.alt = "";
+    image.width = CANVAS_WIDTH;
+    image.height = CANVAS_HEIGHT;
 
+    const copy = document.createElement("span");
+    copy.className = "theme-copy";
     const title = document.createElement("strong");
-    title.textContent = palette.name;
+    title.textContent = theme.name;
     const note = document.createElement("span");
-    note.textContent = palette.note;
-    card.append(title, note);
+    note.textContent = theme.note;
+    copy.append(title, note);
+    card.append(image, copy);
     label.append(input, card);
     group.append(label);
   });
 }
 
-function buildPromptOptions() {
-  const group = document.querySelector("#promptGroup");
+function buildColorOptions(palette) {
+  const group = document.querySelector("#colorGroup");
   group.replaceChildren();
-  PROMPTS.forEach((prompt, index) => {
-    const label = document.createElement("label");
-    label.className = "prompt-option";
-
-    const input = document.createElement("input");
-    input.type = "radio";
-    input.name = "prompt";
-    input.value = String(index);
-    input.checked = index === state.prompt;
-    input.setAttribute("aria-label", `${prompt.name}, ${prompt.note}`);
-    input.addEventListener("change", () => {
-      state.prompt = index;
+  palette.strokes.forEach((color, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `color-button${index === state.strokeColor ? " is-selected" : ""}`;
+    button.style.setProperty("--pen-color", color);
+    button.setAttribute("aria-label", `${index + 1}번째 펜 색`);
+    button.setAttribute(
+      "aria-pressed",
+      index === state.strokeColor ? "true" : "false",
+    );
+    button.addEventListener("click", () => {
+      state.strokeColor = index;
+      buildColorOptions(palette);
+      if (state.currentDoc) {
+        renderArtwork(canvases.draw, state.currentDoc, {
+          draftPoints: state.draftPoints,
+          draftColorIndex: state.strokeColor,
+        });
+      }
     });
-
-    const card = document.createElement("span");
-    card.className = "prompt-card";
-    const glyph = document.createElement("span");
-    glyph.className = "prompt-glyph";
-    glyph.setAttribute("aria-hidden", "true");
-    glyph.textContent = prompt.glyph;
-    const copy = document.createElement("span");
-    copy.className = "prompt-copy";
-    const title = document.createElement("strong");
-    title.textContent = prompt.name;
-    const note = document.createElement("span");
-    note.textContent = prompt.note;
-    copy.append(title, note);
-    card.append(glyph, copy);
-    label.append(input, card);
-    group.append(label);
+    group.append(button);
   });
 }
 
@@ -721,7 +723,6 @@ function renderInvite() {
     count === 0
       ? "작은 점에서 시작해<br />내 여름을 이어주세요"
       : "친구가 남긴 끝에서<br />내 여름을 이어주세요";
-  document.querySelector("#guestName").value = "";
   showScreen(screens.invite);
 }
 
@@ -730,30 +731,26 @@ function renderDraw() {
   const palette = PALETTES[state.currentDoc.palette];
   state.draftPoints = [];
   state.drawing = false;
+  state.strokeColor = count % palette.strokes.length;
   renderArtwork(canvases.draw, state.currentDoc);
+  buildColorOptions(palette);
 
   document.querySelector("#drawEyebrow").textContent =
-    count === 0 ? "첫 번째 선" : `${count + 1}번째 선`;
+    THEMES[state.currentDoc.prompt].name;
   document.querySelector("#drawTitle").textContent =
-    count === 0 ? "빛나는 점에서 시작해요" : "친구의 끝에서 이어주세요";
+    count === 0 ? "점에서 이어 그려요" : "친구의 끝에서 이어 그려요";
   document.querySelector("#drawGuide").textContent =
     count === 0
-      ? "한 손가락으로 선 하나를 그려주세요."
-      : "앞의 선은 지워지지 않아요. 내 선만 다시 그릴 수 있어요.";
+      ? "빛나는 점에서 손가락을 움직여 보세요."
+      : "앞의 그림은 그대로 두고, 내 선 하나를 더해요.";
 
   const turnChip = document.querySelector("#turnChip");
-  turnChip.textContent = `${safeName(state.actorName)}의 색`;
-  turnChip.style.background =
-    palette.strokes[count % palette.strokes.length];
-  turnChip.style.color =
-    state.currentDoc.palette === 3 && count % palette.strokes.length !== 0
-      ? "#17363a"
-      : "#17363a";
+  turnChip.textContent = `${count + 1}번째 선`;
 
   document.querySelector("#undoButton").disabled = true;
   document.querySelector("#commitButton").disabled = true;
   document.querySelector("#drawStatus").textContent =
-    "빛나는 끝점 가까이에서 손가락을 대주세요.";
+    "빛나는 점에서 시작해 주세요.";
   updateEndpointGuide();
   showScreen(screens.draw);
 }
@@ -1080,7 +1077,7 @@ function renderFinal() {
     ...new Set(state.currentDoc.strokes.map((stroke) => stroke.name)),
   ];
   document.querySelector("#finalCaption").textContent =
-    `${joinNames(authors)}의 선이 ${PROMPTS[state.currentDoc.prompt].name}에서 한 장으로 이어졌어요.`;
+    `${joinNames(authors)}의 선이 ${THEMES[state.currentDoc.prompt].name}에서 한 장으로 이어졌어요.`;
   showScreen(screens.final);
   playReplay();
 }
@@ -1140,11 +1137,10 @@ function beginNew() {
   state.actorName = "여름 친구";
   state.names = { A: "", B: "" };
   state.draftPoints = [];
-  state.palette = 0;
+  state.palette = THEMES[0].palette;
   state.prompt = 0;
-  buildPaletteOptions();
-  buildPromptOptions();
-  document.querySelector("#creatorName").value = "";
+  state.strokeColor = 0;
+  buildThemeOptions();
   document.querySelector("#shareBox").classList.add("hidden");
   window.history.replaceState(null, "", window.location.pathname);
   showScreen(screens.setup);
@@ -1165,6 +1161,7 @@ function loadFromLocation() {
   state.currentDoc = incomingDoc;
   state.incoming = true;
   state.actor = nextActor(incomingDoc);
+  state.actorName = state.actor === "A" ? "첫 친구" : "다음 친구";
   state.names.A = actorNameFromDoc(incomingDoc, "A");
   state.names.B = actorNameFromDoc(incomingDoc, "B");
   saveNode(incomingDoc);
@@ -1194,8 +1191,8 @@ function beginStroke(event) {
   const endpoint = endpointOf(state.currentDoc);
   if (pointDistance(point, endpoint) > 105) {
     document.querySelector("#drawStatus").textContent =
-      "빛나는 끝점에 조금 더 가까이 대주세요.";
-    showToast("빛나는 끝점에서 시작해 주세요.");
+      "빛나는 점에 조금 더 가까이 대주세요.";
+    showToast("빛나는 점에서 시작해 주세요.");
     return;
   }
 
@@ -1205,6 +1202,7 @@ function beginStroke(event) {
   updateEndpointGuide();
   renderArtwork(canvases.draw, state.currentDoc, {
     draftPoints: state.draftPoints,
+    draftColorIndex: state.strokeColor,
   });
   document.querySelector("#drawStatus").textContent =
     "손가락을 떼면 내 한 획이 준비돼요.";
@@ -1223,6 +1221,7 @@ function extendStroke(event) {
   }
   renderArtwork(canvases.draw, state.currentDoc, {
     draftPoints: state.draftPoints,
+    draftColorIndex: state.strokeColor,
   });
 }
 
@@ -1248,14 +1247,14 @@ function resetDraftStroke() {
   document.querySelector("#undoButton").disabled = true;
   document.querySelector("#commitButton").disabled = true;
   document.querySelector("#drawStatus").textContent =
-    "내 선만 지웠어요. 빛나는 끝점에서 다시 시작해 주세요.";
+    "내 선만 지웠어요. 빛나는 점에서 다시 시작해 주세요.";
   updateEndpointGuide();
 }
 
 function commitDraftStroke() {
   if (state.draftPoints.length < 3 || !state.currentDoc) return;
   const nodeId = randomId();
-  const color = state.currentDoc.strokes.length % 4;
+  const color = state.strokeColor;
   const stroke = {
     id: nodeId,
     actor: state.actor,
@@ -1283,8 +1282,7 @@ function commitDraftStroke() {
   renderHandoff();
 }
 
-buildPaletteOptions();
-buildPromptOptions();
+buildThemeOptions();
 
 document.querySelector("#startButton").addEventListener("click", beginNew);
 document.querySelector("#compareStartButton").addEventListener("click", beginNew);
@@ -1295,22 +1293,17 @@ document.querySelector("#homeButton").addEventListener("click", returnHome);
 document.querySelector("#restartButton").addEventListener("click", beginNew);
 
 document.querySelector("#createCanvasButton").addEventListener("click", () => {
-  const name = safeName(document.querySelector("#creatorName").value);
   state.actor = "A";
-  state.actorName = name;
-  state.names.A = name;
+  state.actorName = "나";
+  state.names.A = "나";
   state.currentDoc = createRootDoc();
   saveNode(state.currentDoc);
   renderDraw();
 });
 
 document.querySelector("#acceptInviteButton").addEventListener("click", () => {
-  const name = safeName(
-    document.querySelector("#guestName").value,
-    state.actor === "A" ? "첫 친구" : "다음 친구",
-  );
-  state.actorName = name;
-  state.names[state.actor] = name;
+  state.actorName = state.actor === "A" ? "첫 친구" : "다음 친구";
+  state.names[state.actor] = state.actorName;
   renderDraw();
 });
 

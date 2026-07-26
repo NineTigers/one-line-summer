@@ -15,7 +15,17 @@
       content="같은 선에서 시작해도 우리마다 다른 여름이 돼요."
     />
     <meta property="og:type" content="website" />
-    <link rel="stylesheet" href="./styles.css?v=7" />
+    <link
+      rel="preload"
+      as="image"
+      href="./assets/theme-sunset-beach.jpg"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="./assets/theme-bingsu-shop.jpg"
+    />
+    <link rel="stylesheet" href="./styles.css?v=8" />
   </head>
   <body>
     <main class="app-shell">
@@ -47,41 +57,24 @@
         </p>
 
         <div class="hero-art" aria-hidden="true">
-          <svg viewBox="0 0 360 240" role="img">
-            <defs>
-              <linearGradient id="heroSky" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#fff4c7" />
-                <stop offset="1" stop-color="#b9e8e6" />
-              </linearGradient>
-            </defs>
-            <rect width="360" height="240" rx="28" fill="url(#heroSky)" />
-            <circle cx="76" cy="64" r="25" fill="#ffcc55" />
+          <img
+            src="./assets/theme-sunset-beach.jpg"
+            alt=""
+            width="720"
+            height="900"
+          />
+          <svg class="hero-stroke" viewBox="0 0 360 240">
             <path
-              d="M76 64 C104 50 116 96 148 96 C176 96 172 128 204 128"
+              d="M48 112 C88 82 117 135 160 118 C205 100 220 151 267 131 C293 120 311 135 327 153"
               fill="none"
               stroke="#ef6351"
               stroke-linecap="round"
-              stroke-width="9"
+              stroke-width="8"
             />
-            <path
-              d="M204 128 C240 124 240 76 286 82 C314 86 318 108 330 118"
-              fill="none"
-              stroke="#087f86"
-              stroke-linecap="round"
-              stroke-width="9"
-            />
-            <path
-              d="M204 128 C232 148 236 192 286 192 C310 192 320 178 332 168"
-              fill="none"
-              stroke="#7455a8"
-              stroke-linecap="round"
-              stroke-width="9"
-            />
-            <circle cx="204" cy="128" r="8" fill="#fffdf5" stroke="#17363a" stroke-width="3" />
+            <circle cx="48" cy="112" r="8" fill="#fffdf5" stroke="#17363a" stroke-width="3" />
           </svg>
-          <div class="hero-label label-one">같은 시작</div>
-          <div class="hero-label label-two">바다로</div>
-          <div class="hero-label label-three">여름밤으로</div>
+          <div class="hero-label label-one">밑그림 위에</div>
+          <div class="hero-label label-three">한 줄씩 함께</div>
         </div>
 
         <button class="primary-button" id="startButton" type="button">
@@ -99,34 +92,19 @@
       </section>
 
       <section class="screen hidden" id="setupScreen">
-        <p class="eyebrow">첫 선 준비</p>
-        <h1 class="screen-title">우리 여름의<br />빛을 골라요</h1>
+        <p class="eyebrow">배경 고르기</p>
+        <h1 class="screen-title">어떤 여름에<br />그려볼까요?</h1>
         <p class="lead compact">
-          그림 실력은 중요하지 않아요. 작은 점에서 출발해 선 하나만
-          남겨주세요.
+          마음에 드는 밑그림 하나만 고르면 바로 그릴 수 있어요.
         </p>
 
-        <fieldset class="choice-block">
-          <legend>여름의 빛</legend>
-          <div class="palette-grid" id="paletteGroup"></div>
+        <fieldset class="choice-block theme-choice-block">
+          <legend>테마 밑그림</legend>
+          <div class="theme-grid" id="themeGroup"></div>
         </fieldset>
-
-        <fieldset class="choice-block">
-          <legend>떠올릴 장면</legend>
-          <div class="prompt-grid" id="promptGroup"></div>
-        </fieldset>
-
-        <label class="input-label" for="creatorName">내 이름</label>
-        <input
-          class="text-input"
-          id="creatorName"
-          maxlength="8"
-          placeholder="여름 친구"
-          autocomplete="off"
-        />
 
         <button class="primary-button" id="createCanvasButton" type="button">
-          이 빛으로 시작하기
+          이 배경에 그리기
         </button>
       </section>
 
@@ -151,16 +129,8 @@
             시작돼요.
           </p>
         </div>
-        <label class="input-label" for="guestName">내 이름</label>
-        <input
-          class="text-input"
-          id="guestName"
-          maxlength="8"
-          placeholder="다음 친구"
-          autocomplete="off"
-        />
         <button class="primary-button" id="acceptInviteButton" type="button">
-          끝점에서 이어 그리기
+          바로 이어 그리기
         </button>
         <button class="text-link" id="inviteHistoryButton" type="button">
           지금까지 선의 흐름 보기
@@ -170,13 +140,13 @@
       <section class="screen draw-screen hidden" id="drawScreen">
         <div class="draw-heading">
           <div>
-            <p class="eyebrow" id="drawEyebrow">첫 번째 선</p>
-            <h1 class="draw-title" id="drawTitle">빛나는 점에서 시작해요</h1>
+            <p class="eyebrow" id="drawEyebrow">선셋 비치</p>
+            <h1 class="draw-title" id="drawTitle">점에서 이어 그려요</h1>
           </div>
-          <span class="turn-chip" id="turnChip">나의 색</span>
+          <span class="turn-chip" id="turnChip">1번째 선</span>
         </div>
         <p class="draw-guide" id="drawGuide">
-          한 손가락으로 선 하나를 그려주세요.
+          빛나는 점에서 손가락을 움직여 보세요.
         </p>
 
         <div class="canvas-card canvas-card-draw" id="drawCanvasCard">
@@ -190,16 +160,26 @@
           <span class="endpoint-guide" id="endpointGuide" aria-hidden="true"></span>
         </div>
 
+        <div class="drawing-toolbar">
+          <span class="tool-label">펜 색</span>
+          <div
+            class="color-group"
+            id="colorGroup"
+            role="group"
+            aria-label="펜 색 선택"
+          ></div>
+        </div>
+
         <div class="drawing-actions">
           <button class="tool-button" id="undoButton" type="button" disabled>
-            다시 그리기
+            지우고 다시
           </button>
           <button class="primary-button inline-primary" id="commitButton" type="button" disabled>
-            이 선 건네기
+            이 선 완성
           </button>
         </div>
         <p class="helper" id="drawStatus" role="status" aria-live="polite">
-          빛나는 끝점 가까이에서 손가락을 대주세요.
+          빛나는 점에서 시작해 주세요.
         </p>
       </section>
 
@@ -339,6 +319,6 @@
       <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
     </main>
 
-    <script src="./app.js?v=7"></script>
+    <script src="./app.js?v=8"></script>
   </body>
 </html>

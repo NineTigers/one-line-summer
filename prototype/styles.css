@@ -282,6 +282,7 @@ li {
 
 .hero-art {
   position: relative;
+  aspect-ratio: 3 / 2;
   margin: 3px 0 4px;
   background: rgba(255, 255, 255, 0.55);
   border: 1px solid rgba(21, 56, 58, 0.1);
@@ -303,13 +304,24 @@ li {
   pointer-events: none;
 }
 
-.hero-art svg {
+.hero-art > img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
 }
 
-.hero-art path {
+.hero-art .hero-stroke {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-stroke path {
   filter: drop-shadow(0 4px 6px rgba(21, 56, 58, 0.1));
 }
 
@@ -452,6 +464,93 @@ li {
   font-size: 13.5px;
   font-weight: 850;
   letter-spacing: -0.025em;
+}
+
+.theme-choice-block {
+  margin-bottom: 2px;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.theme-option {
+  position: relative;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.theme-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.theme-card {
+  position: relative;
+  display: block;
+  background: #fff;
+  border: 1px solid rgba(21, 56, 58, 0.12);
+  border-radius: 23px;
+  box-shadow: 0 14px 30px rgba(34, 79, 78, 0.1);
+  overflow: hidden;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.theme-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.theme-copy {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  min-height: 56px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 9px 10px;
+  background: rgba(255, 254, 250, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(34, 79, 78, 0.1);
+  backdrop-filter: blur(12px);
+}
+
+.theme-copy strong {
+  font-size: 13px;
+  letter-spacing: -0.025em;
+}
+
+.theme-copy > span {
+  margin-top: 3px;
+  font-size: 9.5px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.theme-option:has(input:checked) .theme-card {
+  box-shadow:
+    0 0 0 3px var(--coral),
+    0 17px 34px rgba(255, 120, 104, 0.18);
+  transform: translateY(-2px);
+}
+
+.theme-option:has(input:focus-visible) .theme-card {
+  outline: 3px solid #f7a928;
+  outline-offset: 3px;
 }
 
 .palette-grid {
@@ -703,6 +802,68 @@ li {
   touch-action: none;
 }
 
+.drawing-toolbar {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 7px 9px 7px 14px;
+  background: rgba(255, 254, 250, 0.76);
+  border: 1px solid rgba(21, 56, 58, 0.1);
+  border-radius: 19px;
+  box-shadow: 0 9px 22px rgba(34, 79, 78, 0.06);
+  backdrop-filter: blur(14px);
+}
+
+.tool-label {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 850;
+  color: var(--ink-soft);
+}
+
+.color-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.color-button {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  background: none;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.color-button::before {
+  width: 25px;
+  height: 25px;
+  content: "";
+  background: var(--pen-color);
+  border: 2px solid rgba(21, 56, 58, 0.28);
+  border-radius: 50%;
+  box-shadow: 0 4px 9px rgba(21, 56, 58, 0.12);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.color-button.is-selected::before {
+  box-shadow:
+    0 0 0 4px #fffefa,
+    0 0 0 7px var(--ink);
+  transform: scale(0.88);
+}
+
 .endpoint-guide {
   position: absolute;
   z-index: 2;
@@ -733,7 +894,7 @@ li {
   display: grid;
   grid-template-columns: 0.82fr 1.4fr;
   gap: 10px;
-  margin-top: 15px;
+  margin-top: 10px;
 }
 
 .tool-button {
@@ -1019,6 +1180,33 @@ li {
   .palette-card {
     min-height: 101px;
     padding: 12px;
+  }
+
+  .theme-grid {
+    gap: 9px;
+  }
+
+  .theme-copy {
+    right: 6px;
+    bottom: 6px;
+    left: 6px;
+    padding-inline: 8px;
+  }
+
+  .theme-copy strong {
+    font-size: 12px;
+  }
+
+  .theme-copy > span {
+    font-size: 8.5px;
+  }
+
+  .drawing-toolbar {
+    padding-left: 12px;
+  }
+
+  .color-group {
+    gap: 1px;
   }
 
   .drawing-actions {
