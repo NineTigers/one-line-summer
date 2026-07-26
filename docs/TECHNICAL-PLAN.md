@@ -1,8 +1,9 @@
-# 올여름 내가 토스할게 기술 계획
+# 한 줄 여름 기술 계획
 
-- 문서 상태: v4 활성 기술 기준선
+- 문서 상태: v5 활성 기술 기준선
 - 기준 제품: `docs/PRODUCT-SPEC.md`
-- 목표: 1:1 약속 토스의 두 기기 상태 전이를 먼저 증명
+- 목표: 같은 중간 선에서 여러 결과가 안전하게 갈라지는 두 기기
+  상태 전이를 먼저 증명
 
 ## 1. 기술 결정
 
@@ -10,284 +11,209 @@
 
 - Apps in Toss WebView
 - React + TypeScript
-- `@apps-in-toss/web-framework` SDK 2.4.5 이상
+- `@apps-in-toss/web-framework` 최신 검증 버전
 - Granite 빌드
-- TDS 모바일 컴포넌트와 비게임 내비게이션 바
-- CSR 또는 정적 빌드만 사용
+- TDS 모바일 컴포넌트와 비게임 내비게이션
+- Canvas 2D 기반 선 렌더링
 
 ### 백엔드
 
-첫 구현 후보는 `Supabase Edge Functions + Postgres`다.
+P0 후보는 `Supabase Edge Functions + Postgres`다.
 
-선정 이유:
+- 지속 운영 서버 프로세스를 직접 관리하지 않는다.
+- Postgres가 불변 중간 상태와 부모-자식 관계를 저장한다.
+- Edge Function이 공개 토큰·쓰기 검증·속도 제한을 담당한다.
+- Realtime은 P0 필수가 아니다. 진입·포그라운드 복귀·사용자
+  새로고침 때 최신 자식 가지를 조회한다.
 
-- 짧은 일정에서 HTTPS API와 트랜잭션을 함께 구성할 수 있다.
-- 초대·응답의 명시적 상태와 만료 쿼리를 관계형으로 표현하기 쉽다.
-- 클라이언트에 서비스 역할 키를 노출하지 않고 Edge Function을
-  상태 전이 경계로 사용할 수 있다.
+무료 요금제는 검증 단계 후보일 뿐 무중단 운영 보장이 아니다.
+휴면, 할당량, 데이터 보존, 상업 이용 조건은 프로젝트 생성 시점의
+공식 요금 정책을 다시 확인한다.
 
-P0는 Realtime이나 WebSocket에 의존하지 않는다. 화면 진입·포그라운드
-복귀·사용자 새로고침에서 최신 상태를 다시 가져온다. 공급자 확정은
-환경 변수와 배포 권한을 확인한 뒤 기록한다.
+## 2. 핵심 불변식
 
-## 2. 공식 기능
+1. 저장된 노드는 수정하지 않는다.
+2. 새 획은 정확히 하나의 부모 노드를 가진다.
+3. 부모의 마지막 끝점과 새 획의 첫 점이 허용 오차 안에서 만난다.
+4. 같은 부모에서 여러 자식을 만들 수 있다.
+5. 한 자식 저장이 형제 자식을 덮어쓰지 않는다.
+6. 공개 토큰은 읽기·파생 생성만 허용하고 기존 노드 수정 권한을
+   주지 않는다.
+7. 클라이언트 URL 상태는 캐시·공유 표현이며 서버가 정본이다.
 
-### 비게임 사용자 식별
+## 3. 데이터 모델
 
-`getAnonymousKey()`의 성공 응답 `hash`를 내부 사용자 기준으로 쓴다.
+### `canvases`
 
-- 별도 로그인 화면 없음
-- 서버에는 원문을 다시 단방향 해시한 값만 저장
-- `INVALID_CATEGORY`, `ERROR`, `undefined`를 각각 처리
-- 샌드박스 mock 성공만으로 실제 동작을 승인하지 않고 QR 실기기 확인
-
-식별키 조회 실패 시:
-
-- 받은 초대 조회·응답은 허용
-- `내가 보낸 토스` 복원은 제한
-- 오류를 가입 요구로 우회하지 않음
-
-### 공유
-
-받는 사람 경로:
-
-`intoss://<appName>/invite/<publicToken>`
-
-정식 링크는 `getTossShareLink()`로 만들고 `share()`로 전송한다.
-출시 전 QR 테스트에서는 배포별 private scheme을 테스트 용도로만
-사용하며 사용자에게 공유하지 않는다.
-
-## 3. 화면 경로
-
-| 경로 | 역할 |
-| --- | --- |
-| `/` | 직접 진입·내 최근 초대 |
-| `/create` | 장면·날짜·역할 작성 |
-| `/create/preview` | 공유 전 확인 |
-| `/invite/:token` | 받는 사람 진입·응답 또는 확정 결과 |
-| `/mine/:inviteId` | 보내는 사람 답장 대기·확정 상태 |
-| `/result/:token` | 확정 결과 공유용 화면 |
-
-경로만으로 권한을 신뢰하지 않는다. 보내는 사람 작업은 익명 키
-소유권을 서버에서 확인한다.
-
-## 4. 데이터 모델
-
-### UserRef
-
-- `user_hash`
+- `id`: UUID
+- `root_node_id`: UUID, nullable until root creation
+- `palette_key`
+- `prompt_key`
+- `creator_user_hash`: nullable
 - `created_at`
-- `last_seen_at`
+- `expires_at`
+- `status`: active / completed / deleted
 
-별도 사용자 프로필 테이블은 만들지 않는다. 표시 이름은 초대 안에만
-보관한다.
+### `nodes`
 
-### Invite
-
-- `id`: 내부 UUID
-- `public_token_hash`: 공유 토큰 해시
-- `creator_user_hash`
-- `creator_alias`: 최대 8자
-- `scene_a_key`
-- `scene_b_key`
-- `creator_role_key`
-- `creator_message`: 최대 20자
-- `status`: pending / confirmed / expired / cancelled
+- `id`: UUID
+- `canvas_id`
+- `parent_node_id`: nullable, root only
+- `depth`: 0~12
+- `author_alias`: 최대 8자
+- `author_slot`: A / B / guest
+- `stroke_color_key`
+- `stroke_points`: 정규화된 좌표 JSONB
+- `endpoint_x`, `endpoint_y`
 - `created_at`
-- `expires_at`: 생성 후 최대 30일
-- `confirmed_at`
-- `version`
+- `finished_at`: nullable
 
-### DateOption
+노드 하나는 `부모까지의 그림 + 새 획 하나`를 의미한다. 전체 그림은
+루트에서 현재 노드까지 조상 경로를 읽어 재구성한다. P0에서는 최대
+12획, 획당 최대 84개 점으로 제한한다.
+
+### `share_tokens`
 
 - `id`
-- `invite_id`
-- `local_date`
-- `time_band`: day / sunset / evening
-- `sort_order`: 0~2
+- `node_id`
+- `token_hash`: unique
+- `created_by_user_hash`: nullable
+- `created_at`
+- `expires_at`
+- `revoked_at`: nullable
 
-서버는 오늘 이후·30일 이내·2~3개·중복 없음 규칙을 다시 검증한다.
+토큰 원문은 생성 응답에서 한 번만 반환하고 DB에는 해시만 저장한다.
 
-### Response
+### `events`
 
-- `id`
-- `invite_id`: unique
-- `responder_user_hash`: nullable
-- `responder_alias`: 최대 8자
-- `selected_scene_key`
-- `selected_date_option_id`
-- `responder_role_key`
-- `responder_message`: 최대 20자
-- `submitted_at`
-- `idempotency_key_hash`
+분석 이벤트는 별도 수집 계층을 우선한다. 사용자 이름, 좌표 원문,
+공개 토큰, 익명 키를 분석 속성으로 보내지 않는다.
 
-초대 하나에 유효 응답 하나만 저장한다.
+## 4. API
 
-## 5. API
+### `POST /v1/canvases`
 
-### `POST /v1/invites`
+- 팔레트·장면·표시 이름·첫 획을 검증한다.
+- Canvas와 첫 Node를 한 트랜잭션으로 만든다.
+- 첫 Node용 공개 토큰을 반환한다.
+
+### `GET /v1/nodes/by-token/:token`
+
+- 현재 노드와 조상 경로를 반환한다.
+- 현재 노드의 자식 수와 최대 두 개의 최신 가지 요약을 반환한다.
+- 내부 사용자 키·토큰 해시·분석 식별자를 포함하지 않는다.
+
+### `POST /v1/nodes/by-token/:token/children`
 
 입력:
 
-- 장면 키 두 개
-- 날짜·시간대 2~3개
-- 보내는 역할
-- 표시 이름·문장
-- 클라이언트 idempotency key
+- 표시 이름
+- 색상 키
+- 정규화된 한 획 좌표
+- idempotency key
 
 처리:
 
-1. 익명 키와 입력 검증
-2. 초대·날짜를 한 트랜잭션으로 생성
-3. 128비트 이상의 무작위 public token 발급
-4. public token은 한 번만 응답하고 DB에는 해시 저장
+1. 토큰·만료·depth 확인
+2. 점 수·범위·총 payload 제한 확인
+3. 부모 끝점과 새 획 시작점의 거리 확인
+4. 부모를 수정하지 않고 새 자식 Node 삽입
+5. 새 Node 공유 토큰 생성
+6. 동일 idempotency key 재요청이면 기존 자식 반환
 
-### `GET /v1/invites/by-token/:token`
+### `GET /v1/nodes/by-token/:token/branches`
 
-응답:
+- 해당 노드의 직접 자식과 각 자식의 대표 말단을 반환한다.
+- 기본 최대 두 가지, 커서 기반 추가 조회
+- 우열·인기·좋아요 정렬 없음
 
-- 공개 가능한 초대 내용
-- 현재 상태
-- 확정 시 공개 가능한 응답과 결과
+### `POST /v1/nodes/by-token/:token/complete`
 
-포함하지 않음:
+- 현재 경로를 완성 상태로 표시한다.
+- 조상 노드나 형제 가지를 잠그지 않는다.
+- 완료 이후에도 중간 토큰에서 새 가지 생성 가능
 
-- 내부 사용자 키
-- 원문 토큰
-- 분석 식별자
-- 읽음 여부
+## 5. 동시성과 무결성
 
-### `POST /v1/invites/by-token/:token/responses`
+- `parent_node_id + idempotency_key_hash` unique constraint
+- 부모 노드는 행 잠금 없이 읽고 자식만 append
+- 같은 부모의 여러 동시 insert는 모두 성공 가능
+- 최대 depth·payload·속도 제한은 서버에서 재검증
+- 좌표는 0~1 정규화 또는 고정 논리 캔버스 기준으로 저장
+- 표시 이름은 제어 문자 제거·길이 제한·HTML 이스케이프
+- 완료 요청은 멱등 처리
 
-처리:
+## 6. Apps in Toss 연동
 
-1. token·상태·만료 확인
-2. 장면·날짜가 해당 초대의 선택지인지 확인
-3. idempotency key 확인
-4. Response 생성과 Invite 확정을 한 트랜잭션으로 처리
-5. 이미 확정됐으면 기존 확정 결과 반환
+### 익명 식별
 
-### `GET /v1/me/invites`
+`getAnonymousKey()` 성공 응답의 `hash`를 다시 단방향 해시해 내부
+사용자 기준으로 쓴다.
 
-- 익명 키 소유 초대만 반환
-- 최근 20개
-- pending / confirmed / expired / cancelled 상태
-- 본문 전체가 아니라 목록 요약 반환
+- 별도 로그인 화면 없음
+- 조회 실패해도 받은 링크의 열람·한 획 추가는 가능
+- 내 최근 작품 복원만 제한
 
-### `POST /v1/me/invites/:id/cancel`
+### 공유
 
-- 소유권 확인
-- pending만 cancelled로 전환
-- confirmed는 취소하지 않음
+정식 경로 예:
 
-## 6. 상태 무결성
+`intoss://<appName>/line/<publicToken>`
 
-- 클라이언트 표시 상태가 아니라 서버 상태를 정본으로 사용
-- 응답 unique constraint로 동시 제출 방지
-- 모든 생성·응답 요청에 idempotency key
-- 날짜·장면·역할 키는 허용 목록 검증
-- 상태 전이에 낙관적 잠금용 `version` 사용
-- 만료는 조회 시 계산과 예약 정리 작업을 함께 사용
-- 같은 응답 재시도는 성공한 기존 결과를 반환
+`getTossShareLink()`로 정식 링크를 만들고 `share()`로 전송한다.
+샌드박스 mock과 실제 QR·실기기 증거를 분리한다.
 
-## 7. 공유와 OG
+### 내비게이션과 복원
 
-### P0
+| 경로 | 역할 |
+| --- | --- |
+| `/` | 직접 진입·최근 작품 |
+| `/create` | 빛·장면·첫 획 |
+| `/line/:token` | 받은 중간 선·한 획 추가 |
+| `/flow/:token` | 조상 흐름·중간 공유 |
+| `/branches/:token` | 같은 부모의 분기 비교 |
+| `/result/:token` | 완성·재생·저장 |
 
-- 정적 챌린지 브랜드 OG 이미지
-- 초대 메시지에 보내는 사람의 별칭을 직접 넣지 않음
-- 딥링크 진입 후 서버에서 초대 내용 조회
+## 7. 로컬 프로토타입과 출시 구현의 차이
 
-### P1
+현재 `prototype/`은:
 
-- 확정된 장면 조합으로 서버 렌더링한 OG
-- 생성 실패 시 정적 OG로 폴백
-- 사용자 직접 입력 문장은 OG에 포함하지 않음
+- 전체 문서를 URL fragment에 base64url로 담는다.
+- 같은 브라우저의 `localStorage`에 생성 노드를 저장한다.
+- 공유받은 상대 화면을 새 탭으로 재현한다.
 
-동적 OG는 P0 출시를 막지 않는다.
+이 방식은 네트워크 없이 UX를 검증하기 위한 것이다. 서로 다른 기기의
+`localStorage`는 공유되지 않으므로 실제 협업, 동시성, 원본 갱신,
+보안의 증거가 아니다. 출시 버전에서 URL에는 공개 토큰만 두고 좌표와
+노드 정본은 Supabase에 둔다.
 
-## 8. 분석
+## 8. 개인정보·보안
 
-- 페이지 이동은 SDK 자동 로그와 충돌하지 않게 확인
-- 핵심 행동만 커스텀 이벤트로 기록
-- 별칭, 문장, 날짜 원문, 토큰, 사용자 키는 분석으로 보내지 않음
-- 샌드박스 데이터는 콘솔 분석에 집계되지 않으므로 로컬 디버그 로그와
-  출시 후 콘솔 지표를 구분
-- 네트워크 실패 시 제품 요청을 막지 않고 분석 이벤트만 제한적으로
-  재시도
+- 서비스 역할 키를 클라이언트 번들에 포함하지 않는다.
+- RLS를 켜고 Edge Function 외 기존 노드 쓰기를 막는다.
+- 공개 토큰은 128비트 이상 무작위 값으로 생성한다.
+- 토큰·사용자 키·좌표 원문을 애플리케이션 로그에 남기지 않는다.
+- 정확한 위치·연락처·전화번호·사진을 수집하지 않는다.
+- 작품 만료·사용자 삭제 경로와 실제 삭제 검증 로그를 둔다.
+- 공개 토큰별 생성 속도, IP/익명 키 기반 남용 방지를 적용한다.
 
-세부 이벤트는 `docs/ANALYTICS.md`를 따른다.
-
-## 9. 개인정보·보안
-
-- DB·Edge Function·클라이언트 권한을 분리
-- 서비스 역할 키를 번들에 포함하지 않음
-- RLS를 켜고 Edge Function 외 직접 쓰기를 막음
-- public token은 URL·서버 접근 로그 노출 가능성을 고려해 128비트
-  이상 무작위 값 사용
-- 토큰 원문과 사용자 키를 애플리케이션 로그에 남기지 않음
-- 직접 입력은 길이·제어 문자·HTML 이스케이프 검증
-- `eval`, 외부 코드 실행, 임의 HTML 삽입 금지
-- 정확한 위치·연락처·전화번호 수집 없음
-- 30일 만료 데이터 정리 작업과 삭제 검증 로그 운영
-
-## 10. 성능·접근성
+## 9. 성능·접근성
 
 - 첫 선택 가능 시점 1초 목표
-- 화면 전환과 네트워크 대기 2초 이상이면 상태 안내
-- 첫 화면 핵심 이미지 우선 로드, 나머지는 lazy loading
-- 320px·390px에서 가로 스크롤 없음
-- 버튼 최소 터치 영역과 텍스트 확대 대응
-- 라디오 그룹의 이름·선택 상태를 화면 낭독기에 제공
-- `prefers-reduced-motion`에서 공 이동 제거
-- 네트워크 오류·확정·만료를 색만으로 구분하지 않음
+- 한 획 payload 32KB 이하 목표
+- 결과 렌더링 60fps 목표, 저사양에서 점 간소화
+- 320px·390px 가로 스크롤 없음
+- 버튼 터치 영역 최소 44px
+- 캔버스에 텍스트 상태 안내와 명확한 접근 가능한 이름 제공
+- 색만으로 차례를 구분하지 않고 이름·순서를 함께 표시
+- `prefers-reduced-motion`에서 반복 펄스·순서 재생 생략
 
-## 11. 테스트
+## 10. 구현 순서
 
-### 단위
-
-- 장면 두 개 중복 방지
-- 날짜 범위·개수·중복
-- 표시 이름·문장 길이
-- 상태 전이 허용표
-- 만료 계산
-- 공개 응답 DTO에서 비공개 필드 제거
-
-### 통합
-
-- 초대 생성 트랜잭션
-- 응답과 확정 원자성
-- 중복·동시 응답
-- idempotency 재시도
-- 소유 초대 목록 권한
-- 취소·만료 링크
-
-### E2E
-
-- 직접 진입 → 초대 생성 → 공유 링크 생성
-- 새 기기에서 초대 진입 → 응답 → 확정
-- 원기기 재진입 → 동일 확정 결과
-- 공유 취소 후 다시 공유
-- 오프라인 응답 후 재시도
-- 백그라운드 복귀
-
-### 실제 환경
-
-- Sandbox WebView
-- QR iOS·Android
-- `getAnonymousKey` 실제 응답
-- private test scheme 경로·쿼리
-- 정식 `intoss://` 설정 검수
-- 비게임 내비게이션 바·뒤로가기·Safe Area
-
-## 12. 기술 하드 게이트
-
-1. 백엔드 공급자와 환경 변수 소유자가 정해진다.
-2. `POST invite → GET recipient → POST response → GET creator`가 서로
-   다른 두 브라우저 컨텍스트에서 작동한다.
-3. 동시 응답 두 건 중 하나만 확정된다.
-4. 익명 키 실패·네트워크 실패·만료 링크에서 복구 경로가 있다.
-5. 첫 `.ait` 번들에서 SDK와 비게임 내비게이션 바가 작동한다.
-
-2026-07-27 12:00 KST까지 2번을 통과하지 못하면 시각 폴리싱과 P1을
-중단하고 출품 지속 여부를 재결정한다.
+1. 현재 V5 프로토타입으로 무설명 사용성 확인
+2. Supabase schema·RLS·Edge Function 최소 절단면
+3. 두 브라우저에서 같은 부모의 동시 자식 생성 테스트
+4. Apps in Toss 공유·익명 식별·딥링크
+5. 두 실기기 왕복
+6. 분석·오류·만료·삭제
+7. `.ait` 번들·콘솔 검수
