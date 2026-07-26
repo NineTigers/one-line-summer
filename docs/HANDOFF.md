@@ -13,7 +13,7 @@
 토스하면, 받은 친구가 한 붓을 더해 다시 건네는 비게임 미니앱이다.
 2026년 7월 앱인토스 바이브코딩 챌린지 출품작이다.
 
-**정적 프로토타입은 돌아간다. 백엔드는 없다. 실기기 증거도 없다.**
+**Vite 앱과 `.ait` 번들은 나온다. 백엔드는 없다. 실기기 증거도 없다.**
 
 ## 1. 마감과 심사 구조
 
@@ -45,28 +45,31 @@
 
 ### 되는 것
 
-`prototype/`은 인터랙티브 정적 프로토타입이다. 서버 없이 돈다.
+Vite 앱이다. `npm install && npm run dev`로 돈다.
 
-```bash
-python3 -m http.server 4184 --bind 127.0.0.1 --directory prototype
-```
-
-- 화면 5개: `homeScreen` `setupScreen` `drawScreen` `handoffScreen`
-  `inviteScreen`
+- 화면 4개: `homeScreen` `setupScreen` `inviteScreen` `drawScreen`
 - 여름 테마 7종 (밑그림 이미지 6장 + 하얀 캔버스)
 - 캔버스 어디서든 시작하는 한 붓 입력, 두 번째 붓 차단, 다시 그리기
 - 링크 생성·복사, 받은 링크로 이어 그리기
 - 390×844 / 320×760, reduced motion 대응
+- `npx ait build` → `one-line-summer.ait` (압축 해제 23MB)
+- `pushState`/`popstate` 화면 히스토리. 모든 화면에서 뒤로가기가
+  앱을 종료하지 않는다
+- `src/bridge.js`에 익명 키·딥링크·공유·Analytics 연결
 
 ### 안 되는 것
 
-- **백엔드 없음.** 그림 상태를 URL fragment(`#d=...`)와
+- **백엔드 없음.** 그림 상태를 URL(`#d=` 웹 / `?d=` 딥링크)과
   `localStorage`(`one-line-summer-nodes-v5`)에 담는다. `fetch` 호출이
   코드에 0건이다.
-- **Apps in Toss SDK 미연동.** 익명 키·공유·딥링크·내비게이션 없음.
+- **SDK 실호출 미검증.** 코드는 연결했으나 토스 앱 안에서 익명 키·
+  딥링크·공유·Analytics가 실제로 응답하는지 한 번도 못 봤다. 브라우저
+  에서는 전부 조용히 건너뛰는 경로만 확인했다.
 - **실기기 증거 없음.** 두 기기 왕복을 한 번도 못 했다.
 - **사용자 증거 없음.** 플레이테스트 미실시.
-- `.ait` 번들 없음. 콘솔 등록 없음.
+- 콘솔 등록 없음. `appName`은 임시값 `one-line-summer`다.
+- `site/`의 정책 페이지를 올릴 공개 URL이 없다. 저장소에 git remote가
+  없다.
 
 ### 저장소 지도
 
@@ -78,9 +81,16 @@ python3 -m http.server 4184 --bind 127.0.0.1 --directory prototype
 | `docs/TECHNICAL-PLAN.md` | Supabase 스키마 초안 |
 | `docs/PLAYTEST-PLAN.md` | 5그룹 검증 설계 |
 | `docs/DIRECTION-REVIEW-V5.md` | 왜 이 방향인지의 근거 |
+| `docs/TEST-SCRIPT.md` | 수동 테스트 절차 |
 | `docs/history/`, `docs/CONCEPT-V3-*` | 폐기된 v1~v4 |
-| `prototype/` | 정적 구현 |
-| `store/` | **V3 시절 스크린샷. 출품에 쓰지 않는다** |
+| `index.html` | Vite 진입점 |
+| `src/ui/` | 화면·그리기 구현 |
+| `src/bridge.js` | Apps in Toss SDK 얇은 감싸개 |
+| `public/assets/` | 밑그림 6장. 번들에 들어간다 |
+| `granite.config.ts` | `appName`·브랜드·권한 |
+| `store/` | 콘솔 지면 자산과 재생성 스크립트 |
+| `site/` | 개인정보 처리방침·고객문의. 앱 번들에 안 들어간다 |
+| `docs/history/assets-v3/` | **V3 시절 자산. 출품에 쓰지 않는다** |
 
 ## 4. 다음 작업 (우선순위)
 
@@ -89,10 +99,19 @@ python3 -m http.server 4184 --bind 127.0.0.1 --directory prototype
 7/29에 필요한 건 `.ait` 번들 하나다. 백엔드가 없어도 등록은 된다.
 **등록을 백엔드 뒤로 미루지 말 것.**
 
-1. Apps in Toss SDK 연동 (5절 참고. 자매 프로젝트에서 이미 뚫었다)
-2. `appName` 콘솔 확정, 아이콘·썸네일·스크린샷 제작
-3. 개인정보 처리방침·고객문의 페이지
-4. `.ait` 빌드 → 콘솔 등록
+1. ~~Apps in Toss SDK 연동~~ — 코드 연결 완료(2026-07-26). 실기기
+   확인은 아직이다
+2. ~~`.ait` 빌드~~ — `npx ait build`로 나온다
+3. ~~로고·썸네일·스크린샷~~ — `store/`에 규격대로 있다.
+   `./store/make-assets.sh`로 다시 만든다
+4. ~~개인정보 처리방침·고객문의~~ — `site/`에 초안이 있다
+5. `appName` 콘솔 중복 확인. 확정하면 `granite.config.ts`와
+   `src/bridge.js`의 `APP_NAME`을 **둘 다** 바꾼다
+6. `site/`를 실제 URL에 올린다. 콘솔이 개인정보 처리방침과 고객문의
+   주소를 요구한다. 저장소에 git remote가 없어 아직 올릴 곳이 없다
+7. `site/`의 TODO 두 개(개인정보 보호책임자 이름, 문의 이메일 확인)를
+   채운다
+8. 콘솔 등록
 
 ### P1 — 제품이 실제로 성립하려면
 

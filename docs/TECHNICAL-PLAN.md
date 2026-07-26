@@ -176,9 +176,10 @@ P0 후보는 `Supabase Edge Functions + Postgres`다.
 
 ## 7. 로컬 프로토타입과 출시 구현의 차이
 
-현재 `prototype/`은:
+현재 구현(`index.html`·`src/`)은:
 
-- 전체 문서를 URL fragment에 base64url로 담는다.
+- 전체 문서를 URL에 base64url로 담는다. 웹 링크는 프래그먼트(`#d=`),
+  토스 딥링크는 쿼리(`?d=`)를 쓴다.
 - 같은 브라우저의 `localStorage`에 생성 노드를 저장한다.
 - 공유받은 상대 화면을 새 탭으로 재현한다.
 

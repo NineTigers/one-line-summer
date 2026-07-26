@@ -118,8 +118,9 @@
 
 ## 6. 현재 구현과 증거
 
-`prototype/`은 URL fragment와 브라우저 `localStorage`로 그림 상태를
-재현한 인터랙티브 정적 프로토타입이다.
+`index.html`·`src/`는 URL과 브라우저 `localStorage`로 그림 상태를
+재현한 Vite 앱이다. 웹 링크는 프래그먼트(`#d=`), 토스 딥링크는
+쿼리(`?d=`)를 쓰고 앱은 양쪽을 모두 읽는다.
 
 확인할 항목:
 
