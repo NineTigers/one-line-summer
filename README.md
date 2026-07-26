@@ -81,12 +81,12 @@ Apps in Toss의 `getAnonymousKey()`·`getTossShareLink()`·`share()`·
 - [수동 테스트 절차](docs/TEST-SCRIPT.md)
 - [밑그림 자산 기록](docs/ASSETS.md)
 - [콘솔 지면 자산](store/README.md)
-- [개인정보 처리방침·고객문의](site/index.html)
+- [개인정보 처리방침·고객문의](https://ninetigers.github.io/one-line-summer/) — `site/`에서 자동 배포
 - [V4 약속 토스 역사 기준](docs/history/PRODUCT-SPEC-PROMISE-V4.md)
 
 ## 다음 하드 게이트
 
-1. 콘솔 `appName` 확정과 `site/` 정책 페이지 호스팅
+1. 콘솔 `appName` 확정
 2. Apps in Toss 두 실기기에서 링크 생성·수신·이어 그리기
 3. Supabase의 불변 그림 상태 저장
 4. 다섯 그룹의 무설명 완주와 실제 재토스

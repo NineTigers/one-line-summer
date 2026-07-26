@@ -63,16 +63,20 @@
 | --- | --- |
 | 수단 | 이메일 |
 | 주소 | `ygyim.biz@gmail.com` · **실제 수신 확인 필요** |
-| 안내 페이지 | `site/support.html` 호스팅 주소 |
+| 안내 페이지 | https://ninetigers.github.io/one-line-summer/support.html |
 
 ## 6. 정책 URL
 
 | 항목 | 값 |
 | --- | --- |
-| 개인정보 처리방침 | `site/privacy.html` 호스팅 주소 |
+| 개인정보 처리방침 | https://ninetigers.github.io/one-line-summer/privacy.html |
 
-`site/privacy.html`에 남은 TODO(개인정보 보호책임자 이름)를 채운 뒤
-등록한다.
+`site/`를 밀면 GitHub Actions가 자동 배포한다. 페이지는 이미 떠 있다.
+
+`site/privacy.html`에 남은 TODO(개인정보 보호책임자 이름)를 채우고
+다시 밀어야 등록용으로 완성된다.
+
+입구: https://ninetigers.github.io/one-line-summer/
 
 ## 7. 지면 자산
 

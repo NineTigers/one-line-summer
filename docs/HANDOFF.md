@@ -70,8 +70,8 @@ Vite 앱이다. `npm install && npm run dev`로 돈다.
 - **실기기 증거 없음.** 두 기기 왕복을 한 번도 못 했다.
 - **사용자 증거 없음.** 플레이테스트 미실시.
 - 콘솔 등록 없음. `appName`은 임시값 `one-line-summer`다.
-- `site/`의 정책 페이지를 올릴 공개 URL이 없다. 저장소에 git remote가
-  없다.
+- `site/`의 개인정보 보호책임자 이름이 아직 `TODO`다. 페이지 자체는
+  https://ninetigers.github.io/one-line-summer/ 에 떠 있다.
 
 ### 저장소 지도
 
@@ -109,8 +109,8 @@ Vite 앱이다. `npm install && npm run dev`로 돈다.
 4. ~~개인정보 처리방침·고객문의~~ — `site/`에 초안이 있다
 5. `appName` 콘솔 중복 확인. 확정하면 `granite.config.ts`와
    `src/bridge.js`의 `APP_NAME`을 **둘 다** 바꾼다
-6. `site/`를 실제 URL에 올린다. 콘솔이 개인정보 처리방침과 고객문의
-   주소를 요구한다. 저장소에 git remote가 없어 아직 올릴 곳이 없다
+6. ~~`site/` 호스팅~~ — https://ninetigers.github.io/one-line-summer/ 에 떠 있다.
+   `site/`를 밀면 GitHub Actions가 자동 배포한다
 7. `site/`의 TODO 두 개(개인정보 보호책임자 이름, 문의 이메일 확인)를
    채운다
 8. 콘솔 등록
