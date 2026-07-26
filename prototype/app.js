@@ -40,10 +40,34 @@ const PALETTES = [
 ];
 
 const PROMPTS = [
-  { id: "wave", name: "바다 냄새", note: "파도처럼 이어보기", seed: [205, 190] },
-  { id: "rain", name: "소나기 소리", note: "빗방울처럼 이어보기", seed: [510, 190] },
-  { id: "night", name: "여름밤 공기", note: "느리게 이어보기", seed: [190, 680] },
-  { id: "free", name: "아무 말 없는 여름", note: "마음 가는 대로", seed: [360, 430] },
+  {
+    id: "wave",
+    name: "바다 냄새",
+    note: "파도처럼 이어보기",
+    glyph: "⌁",
+    seed: [205, 190],
+  },
+  {
+    id: "rain",
+    name: "소나기 소리",
+    note: "빗방울처럼 이어보기",
+    glyph: "╱",
+    seed: [510, 190],
+  },
+  {
+    id: "night",
+    name: "여름밤 공기",
+    note: "느리게 이어보기",
+    glyph: "☾",
+    seed: [190, 680],
+  },
+  {
+    id: "free",
+    name: "아무 말 없는 여름",
+    note: "마음 가는 대로",
+    glyph: "✳",
+    seed: [360, 430],
+  },
 ];
 
 const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -375,6 +399,160 @@ function drawSmoothLine(context, points, color, width = 17) {
   context.restore();
 }
 
+function drawWaveUnderlay(context, tone) {
+  context.strokeStyle = tone;
+  context.lineWidth = 4;
+  context.beginPath();
+  context.arc(590, 170, 76, Math.PI * 0.92, Math.PI * 2.08);
+  context.stroke();
+
+  [590, 650, 714].forEach((y, index) => {
+    context.beginPath();
+    context.moveTo(-45, y);
+    context.bezierCurveTo(95, y - 42, 190, y + 42, 330, y);
+    context.bezierCurveTo(465, y - 40, 585, y + 36, 770, y - 5);
+    context.globalAlpha = 0.17 - index * 0.025;
+    context.stroke();
+  });
+
+  context.globalAlpha = 0.09;
+  context.fillStyle = tone;
+  context.beginPath();
+  context.moveTo(0, 742);
+  context.bezierCurveTo(130, 700, 220, 780, 360, 738);
+  context.bezierCurveTo(500, 695, 625, 760, 720, 716);
+  context.lineTo(720, 900);
+  context.lineTo(0, 900);
+  context.closePath();
+  context.fill();
+}
+
+function drawRainUnderlay(context, tone) {
+  context.strokeStyle = tone;
+  context.fillStyle = tone;
+  context.lineWidth = 4;
+  context.beginPath();
+  context.arc(142, 184, 46, Math.PI, Math.PI * 2);
+  context.arc(200, 170, 62, Math.PI, Math.PI * 2);
+  context.arc(267, 188, 43, Math.PI, Math.PI * 2);
+  context.stroke();
+
+  const drops = [
+    [92, 290],
+    [206, 320],
+    [334, 260],
+    [452, 342],
+    [570, 278],
+    [654, 380],
+    [145, 470],
+    [385, 502],
+    [596, 538],
+  ];
+  drops.forEach(([x, y], index) => {
+    context.globalAlpha = index % 2 ? 0.1 : 0.16;
+    context.beginPath();
+    context.moveTo(x + 18, y - 28);
+    context.lineTo(x - 18, y + 28);
+    context.stroke();
+  });
+
+  context.globalAlpha = 0.12;
+  context.beginPath();
+  context.ellipse(220, 724, 150, 35, -0.08, 0, Math.PI * 2);
+  context.stroke();
+}
+
+function drawNightUnderlay(context, tone) {
+  context.strokeStyle = tone;
+  context.fillStyle = tone;
+  context.lineWidth = 4;
+
+  context.beginPath();
+  context.arc(570, 180, 76, 0.32, Math.PI * 1.62);
+  context.arc(602, 150, 67, Math.PI * 1.57, 0.45, true);
+  context.stroke();
+
+  const stars = [
+    [110, 140, 6],
+    [330, 115, 5],
+    [646, 345, 6],
+    [468, 430, 4],
+    [128, 500, 4],
+  ];
+  stars.forEach(([x, y, radius], index) => {
+    context.globalAlpha = index % 2 ? 0.12 : 0.2;
+    context.beginPath();
+    context.moveTo(x - radius * 2, y);
+    context.lineTo(x + radius * 2, y);
+    context.moveTo(x, y - radius * 2);
+    context.lineTo(x, y + radius * 2);
+    context.stroke();
+  });
+
+  context.globalAlpha = 0.13;
+  [650, 710].forEach((y) => {
+    context.beginPath();
+    context.moveTo(35, y);
+    context.bezierCurveTo(185, y - 45, 315, y + 35, 460, y - 6);
+    context.bezierCurveTo(550, y - 30, 625, y - 20, 735, y - 44);
+    context.stroke();
+  });
+}
+
+function drawSunUnderlay(context, tone) {
+  context.strokeStyle = tone;
+  context.fillStyle = tone;
+  context.lineWidth = 4;
+  context.beginPath();
+  context.arc(586, 184, 72, 0, Math.PI * 2);
+  context.stroke();
+
+  for (let index = 0; index < 8; index += 1) {
+    const angle = (Math.PI * 2 * index) / 8;
+    context.globalAlpha = 0.12;
+    context.beginPath();
+    context.moveTo(
+      586 + Math.cos(angle) * 98,
+      184 + Math.sin(angle) * 98,
+    );
+    context.lineTo(
+      586 + Math.cos(angle) * 122,
+      184 + Math.sin(angle) * 122,
+    );
+    context.stroke();
+  }
+
+  context.globalAlpha = 0.11;
+  context.beginPath();
+  context.moveTo(-30, 620);
+  context.bezierCurveTo(90, 544, 160, 590, 205, 720);
+  context.bezierCurveTo(118, 670, 72, 706, 10, 810);
+  context.stroke();
+  context.beginPath();
+  context.moveTo(35, 650);
+  context.quadraticCurveTo(120, 604, 170, 622);
+  context.moveTo(26, 714);
+  context.quadraticCurveTo(108, 672, 152, 698);
+  context.stroke();
+}
+
+function drawSceneUnderlay(context, doc) {
+  const palette = PALETTES[doc.palette];
+  const prompt = PROMPTS[doc.prompt];
+  const tone = palette.dark ? "#f6f2ff" : "#285f63";
+  context.save();
+  context.globalAlpha = palette.dark ? 0.2 : 0.15;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+
+  if (prompt.id === "wave") drawWaveUnderlay(context, tone);
+  if (prompt.id === "rain") drawRainUnderlay(context, tone);
+  if (prompt.id === "night") drawNightUnderlay(context, tone);
+  if (prompt.id === "free") drawSunUnderlay(context, tone);
+
+  context.restore();
+}
+
 function paintBackground(context, doc) {
   const palette = PALETTES[doc.palette];
   const gradient = context.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -384,17 +562,18 @@ function paintBackground(context, doc) {
   context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
   context.save();
-  context.globalAlpha = palette.dark ? 0.15 : 0.11;
+  context.globalAlpha = palette.dark ? 0.08 : 0.055;
   context.strokeStyle = palette.dark ? "#ffffff" : "#17363a";
-  context.lineWidth = 2;
-  for (let y = 85; y < CANVAS_HEIGHT; y += 90) {
+  context.lineWidth = 1.5;
+  for (let x = 80; x < CANVAS_WIDTH; x += 92) {
     context.beginPath();
-    context.moveTo(-30, y);
-    context.bezierCurveTo(140, y - 32, 260, y + 32, 430, y);
-    context.bezierCurveTo(555, y - 24, 635, y + 20, 760, y - 4);
+    context.moveTo(x, 0);
+    context.lineTo(x - 60, CANVAS_HEIGHT);
     context.stroke();
   }
   context.restore();
+
+  drawSceneUnderlay(context, doc);
 
   const [seedX, seedY] = toCanvasPoint(seedPoint(doc));
   context.save();
@@ -484,7 +663,7 @@ function buildPaletteOptions() {
     });
 
     const card = document.createElement("span");
-    card.className = "palette-card";
+    card.className = `palette-card${palette.dark ? " is-dark" : ""}`;
     card.style.background = `linear-gradient(135deg, ${palette.background[0]}, ${palette.background[1]})`;
 
     const title = document.createElement("strong");
@@ -516,11 +695,18 @@ function buildPromptOptions() {
 
     const card = document.createElement("span");
     card.className = "prompt-card";
+    const glyph = document.createElement("span");
+    glyph.className = "prompt-glyph";
+    glyph.setAttribute("aria-hidden", "true");
+    glyph.textContent = prompt.glyph;
+    const copy = document.createElement("span");
+    copy.className = "prompt-copy";
     const title = document.createElement("strong");
     title.textContent = prompt.name;
     const note = document.createElement("span");
     note.textContent = prompt.note;
-    card.append(title, note);
+    copy.append(title, note);
+    card.append(glyph, copy);
     label.append(input, card);
     group.append(label);
   });
