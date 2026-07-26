@@ -504,12 +504,20 @@ li {
     box-shadow 160ms ease;
 }
 
-.theme-card img {
+.theme-card img,
+.theme-blank-preview {
   display: block;
   width: 100%;
   height: auto;
   aspect-ratio: 4 / 5;
+}
+
+.theme-card img {
   object-fit: cover;
+}
+
+.theme-blank-preview {
+  background: #fff;
 }
 
 .theme-copy {
@@ -862,32 +870,6 @@ li {
     0 0 0 4px #fffefa,
     0 0 0 7px var(--ink);
   transform: scale(0.88);
-}
-
-.endpoint-guide {
-  position: absolute;
-  z-index: 2;
-  width: 24px;
-  height: 24px;
-  background: rgba(255, 254, 250, 0.92);
-  border: 4px solid var(--sea-deep);
-  border-radius: 50%;
-  box-shadow:
-    0 0 0 8px rgba(255, 211, 106, 0.38),
-    0 0 0 16px rgba(255, 211, 106, 0.09),
-    0 9px 22px rgba(20, 95, 98, 0.2);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  animation: endpoint-pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes endpoint-pulse {
-  50% {
-    box-shadow:
-      0 0 0 12px rgba(255, 211, 106, 0.21),
-      0 0 0 21px rgba(255, 211, 106, 0.04),
-      0 10px 26px rgba(20, 95, 98, 0.22);
-  }
 }
 
 .drawing-actions {

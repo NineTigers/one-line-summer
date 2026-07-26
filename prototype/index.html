@@ -25,7 +25,7 @@
       as="image"
       href="./assets/theme-bingsu-shop.jpg"
     />
-    <link rel="stylesheet" href="./styles.css?v=8" />
+    <link rel="stylesheet" href="./styles.css?v=9" />
   </head>
   <body>
     <main class="app-shell">
@@ -71,7 +71,6 @@
               stroke-linecap="round"
               stroke-width="8"
             />
-            <circle cx="48" cy="112" r="8" fill="#fffdf5" stroke="#17363a" stroke-width="3" />
           </svg>
           <div class="hero-label label-one">밑그림 위에</div>
           <div class="hero-label label-three">한 줄씩 함께</div>
@@ -85,7 +84,7 @@
         </button>
 
         <ul class="promise-list" aria-label="서비스 특징">
-          <li><strong>한 번에 한 획</strong><span>끝점에서만 이어져요</span></li>
+          <li><strong>한 번에 한 획</strong><span>어디서든 그려요</span></li>
           <li><strong>여러 갈래</strong><span>중간 선을 다시 공유해요</span></li>
           <li><strong>함께 만든 흔적</strong><span>그려진 순서로 다시 봐요</span></li>
         </ul>
@@ -141,12 +140,12 @@
         <div class="draw-heading">
           <div>
             <p class="eyebrow" id="drawEyebrow">선셋 비치</p>
-            <h1 class="draw-title" id="drawTitle">점에서 이어 그려요</h1>
+            <h1 class="draw-title" id="drawTitle">원하는 곳에 한 붓 그려요</h1>
           </div>
           <span class="turn-chip" id="turnChip">1번째 선</span>
         </div>
         <p class="draw-guide" id="drawGuide">
-          빛나는 점에서 손가락을 움직여 보세요.
+          손가락을 떼기 전까지 한 번에 그려요.
         </p>
 
         <div class="canvas-card canvas-card-draw" id="drawCanvasCard">
@@ -157,7 +156,6 @@
             height="900"
             aria-label="한 줄 이어그리기 캔버스"
           ></canvas>
-          <span class="endpoint-guide" id="endpointGuide" aria-hidden="true"></span>
         </div>
 
         <div class="drawing-toolbar">
@@ -175,11 +173,11 @@
             지우고 다시
           </button>
           <button class="primary-button inline-primary" id="commitButton" type="button" disabled>
-            이 선 완성
+            이 한 붓 토스하기
           </button>
         </div>
         <p class="helper" id="drawStatus" role="status" aria-live="polite">
-          빛나는 점에서 시작해 주세요.
+          캔버스 어디서든 시작할 수 있어요.
         </p>
       </section>
 
@@ -210,10 +208,10 @@
         </div>
 
         <button class="primary-button" id="makeShareLinkButton" type="button">
-          지금 선을 여러 사람에게 보내기
+          링크로 다른 사람에게 토스하기
         </button>
         <button class="secondary-button" id="localContinueButton" type="button">
-          상대 화면으로 이어서 체험하기
+          이 폰을 건네 바로 이어 그리기
         </button>
         <button class="secondary-button" id="historyButton" type="button">
           중간 선을 골라 새 가지 만들기
@@ -319,6 +317,6 @@
       <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
     </main>
 
-    <script src="./app.js?v=8"></script>
+    <script src="./app.js?v=9"></script>
   </body>
 </html>

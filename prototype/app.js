@@ -54,11 +54,18 @@ const THEMES = [
     note: "햇살을 피해 들어온 오후",
     asset: "./assets/theme-bingsu-shop.jpg",
     palette: 0,
-    seed: [360, 500],
+  },
+  {
+    id: "blank-white",
+    name: "하얀 캔버스",
+    note: "아무것도 없는 자유 배경",
+    asset: null,
+    palette: 0,
   },
 ];
 
 const THEME_IMAGES = THEMES.map((theme) => {
+  if (!theme.asset) return null;
   const image = new Image();
   image.decoding = "async";
   image.src = theme.asset;
@@ -311,18 +318,6 @@ function nodesForRoot(rootId) {
   return loadStoredNodes().filter((node) => node.rootId === rootId);
 }
 
-function seedPoint(doc) {
-  const [x, y] = THEMES[doc.prompt].seed;
-  return [Math.round((x / CANVAS_WIDTH) * 1000), Math.round((y / CANVAS_HEIGHT) * 1000)];
-}
-
-function endpointOf(doc, points = null) {
-  if (points && points.length > 0) return points[points.length - 1];
-  const lastStroke = doc.strokes[doc.strokes.length - 1];
-  if (lastStroke) return lastStroke.points[lastStroke.points.length - 1];
-  return seedPoint(doc);
-}
-
 function nextActor(doc) {
   const lastStroke = doc.strokes[doc.strokes.length - 1];
   return lastStroke?.actor === "A" ? "B" : "A";
@@ -554,10 +549,16 @@ function drawSceneUnderlay(context, doc) {
 function paintBackground(context, doc) {
   const palette = PALETTES[doc.palette];
   const themeIndex = Math.max(0, Math.min(THEMES.length - 1, doc.prompt));
+  const theme = THEMES[themeIndex];
   const themeImage = THEME_IMAGES[themeIndex];
-  const ready = themeImage.complete && themeImage.naturalWidth > 0;
+  const ready =
+    theme.asset === null ||
+    (themeImage?.complete && themeImage.naturalWidth > 0);
 
-  if (ready) {
+  if (theme.asset === null) {
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  } else if (ready) {
     context.drawImage(themeImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   } else {
     const gradient = context.createLinearGradient(
@@ -571,19 +572,6 @@ function paintBackground(context, doc) {
     context.fillStyle = gradient;
     context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   }
-
-  const [seedX, seedY] = toCanvasPoint(seedPoint(doc));
-  context.save();
-  context.shadowColor = "rgba(21, 56, 58, 0.2)";
-  context.shadowBlur = 14;
-  context.fillStyle = "#fffdf7";
-  context.beginPath();
-  context.arc(seedX, seedY, 17, 0, Math.PI * 2);
-  context.fill();
-  context.strokeStyle = "#17363a";
-  context.lineWidth = 4;
-  context.stroke();
-  context.restore();
   return ready;
 }
 
@@ -592,8 +580,8 @@ function renderArtwork(canvas, doc, options = {}) {
   context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   const backgroundReady = paintBackground(context, doc);
   if (!backgroundReady) {
-    const themeImage = THEME_IMAGES[doc.prompt] || THEME_IMAGES[0];
-    themeImage.addEventListener(
+    const themeImage = THEME_IMAGES[doc.prompt] ?? THEME_IMAGES[0];
+    themeImage?.addEventListener(
       "load",
       () => renderArtwork(canvas, doc, options),
       { once: true },
@@ -625,27 +613,6 @@ function renderArtwork(canvas, doc, options = {}) {
     );
   }
 
-  if (options.showEndpoint !== false) {
-    const point = endpointOf(doc, options.draftPoints);
-    const [x, y] = toCanvasPoint(point);
-    context.save();
-    context.fillStyle = "#fffef9";
-    context.strokeStyle = "#17363a";
-    context.lineWidth = 4;
-    context.beginPath();
-    context.arc(x, y, 10, 0, Math.PI * 2);
-    context.fill();
-    context.stroke();
-    context.restore();
-  }
-}
-
-function updateEndpointGuide() {
-  const guide = document.querySelector("#endpointGuide");
-  const point = endpointOf(state.currentDoc, state.draftPoints);
-  guide.style.left = `${point[0] / 10}%`;
-  guide.style.top = `${point[1] / 10}%`;
-  guide.classList.toggle("hidden", state.drawing);
 }
 
 function buildThemeOptions() {
@@ -668,11 +635,18 @@ function buildThemeOptions() {
 
     const card = document.createElement("span");
     card.className = "theme-card";
-    const image = document.createElement("img");
-    image.src = theme.asset;
-    image.alt = "";
-    image.width = CANVAS_WIDTH;
-    image.height = CANVAS_HEIGHT;
+    let preview;
+    if (theme.asset) {
+      preview = document.createElement("img");
+      preview.src = theme.asset;
+      preview.alt = "";
+      preview.width = CANVAS_WIDTH;
+      preview.height = CANVAS_HEIGHT;
+    } else {
+      preview = document.createElement("span");
+      preview.className = "theme-blank-preview";
+      preview.setAttribute("aria-hidden", "true");
+    }
 
     const copy = document.createElement("span");
     copy.className = "theme-copy";
@@ -681,7 +655,7 @@ function buildThemeOptions() {
     const note = document.createElement("span");
     note.textContent = theme.note;
     copy.append(title, note);
-    card.append(image, copy);
+    card.append(preview, copy);
     label.append(input, card);
     group.append(label);
   });
@@ -718,11 +692,11 @@ function renderInvite() {
   renderArtwork(canvases.invite, state.currentDoc);
   const count = state.currentDoc.strokes.length;
   document.querySelector("#inviteEyebrow").textContent =
-    count === 0 ? "첫 점이 도착했어요" : `${count}개의 선이 도착했어요`;
+    count === 0 ? "새 배경이 도착했어요" : `${count}개의 한 붓이 도착했어요`;
   document.querySelector("#inviteTitle").innerHTML =
     count === 0
-      ? "작은 점에서 시작해<br />내 여름을 이어주세요"
-      : "친구가 남긴 끝에서<br />내 여름을 이어주세요";
+      ? "원하는 곳에<br />내 한 붓을 그려주세요"
+      : "친구의 그림 위에<br />내 한 붓을 더해주세요";
   showScreen(screens.invite);
 }
 
@@ -737,12 +711,11 @@ function renderDraw() {
 
   document.querySelector("#drawEyebrow").textContent =
     THEMES[state.currentDoc.prompt].name;
-  document.querySelector("#drawTitle").textContent =
-    count === 0 ? "점에서 이어 그려요" : "친구의 끝에서 이어 그려요";
+  document.querySelector("#drawTitle").textContent = "원하는 곳에 한 붓 그려요";
   document.querySelector("#drawGuide").textContent =
     count === 0
-      ? "빛나는 점에서 손가락을 움직여 보세요."
-      : "앞의 그림은 그대로 두고, 내 선 하나를 더해요.";
+      ? "손가락을 떼기 전까지 한 번에 그려요."
+      : "앞의 그림은 그대로 두고, 한 붓만 더해요.";
 
   const turnChip = document.querySelector("#turnChip");
   turnChip.textContent = `${count + 1}번째 선`;
@@ -750,8 +723,7 @@ function renderDraw() {
   document.querySelector("#undoButton").disabled = true;
   document.querySelector("#commitButton").disabled = true;
   document.querySelector("#drawStatus").textContent =
-    "빛나는 점에서 시작해 주세요.";
-  updateEndpointGuide();
+    "캔버스 어디서든 시작할 수 있어요.";
   showScreen(screens.draw);
 }
 
@@ -861,7 +833,7 @@ function selectHistoryCount(count) {
   const caption = document.querySelector("#snapshotCaption");
   caption.textContent =
     count === 0
-      ? "아직 아무 선도 없는 첫 점에서 갈라져요."
+      ? "아직 아무 선도 없는 배경에서 갈라져요."
       : `${count}번째 선까지 똑같이 보고, 다음 사람부터 서로 다르게 이어가요.`;
 
   const tips = branchTips(state.selectedHistoryDoc);
@@ -1009,7 +981,7 @@ function renderCompare(docs, fromHistory = false) {
     const canvas = document.createElement("canvas");
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
-    renderArtwork(canvas, doc, { showEndpoint: false });
+    renderArtwork(canvas, doc);
 
     const title = document.createElement("p");
     title.textContent = `여름 가지 ${String.fromCharCode(65 + index)}`;
@@ -1086,7 +1058,7 @@ function playReplay() {
   window.clearInterval(state.replayTimer);
   const badge = document.querySelector("#replayBadge");
   if (prefersReducedMotion()) {
-    renderArtwork(canvases.final, state.currentDoc, { showEndpoint: false });
+    renderArtwork(canvases.final, state.currentDoc);
     badge.textContent = "완성";
     return;
   }
@@ -1095,13 +1067,11 @@ function playReplay() {
   badge.textContent = "다시 그리는 중";
   renderArtwork(canvases.final, state.currentDoc, {
     strokeLimit: 0,
-    showEndpoint: false,
   });
   state.replayTimer = window.setInterval(() => {
     count += 1;
     renderArtwork(canvases.final, state.currentDoc, {
       strokeLimit: count,
-      showEndpoint: false,
     });
     if (count >= state.currentDoc.strokes.length) {
       window.clearInterval(state.replayTimer);
@@ -1114,7 +1084,7 @@ function saveArtwork() {
   const exportCanvas = document.createElement("canvas");
   exportCanvas.width = CANVAS_WIDTH;
   exportCanvas.height = CANVAS_HEIGHT;
-  renderArtwork(exportCanvas, state.currentDoc, { showEndpoint: false });
+  renderArtwork(exportCanvas, state.currentDoc);
   exportCanvas.toBlob((blob) => {
     if (!blob) {
       showToast("이미지를 만들지 못했어요.");
@@ -1187,25 +1157,20 @@ function pointDistance(first, second) {
 
 function beginStroke(event) {
   if (!state.currentDoc || event.button > 0) return;
-  const point = eventPoint(event);
-  const endpoint = endpointOf(state.currentDoc);
-  if (pointDistance(point, endpoint) > 105) {
-    document.querySelector("#drawStatus").textContent =
-      "빛나는 점에 조금 더 가까이 대주세요.";
-    showToast("빛나는 점에서 시작해 주세요.");
+  if (state.draftPoints.length >= 3) {
+    showToast("한 번에 한 붓만 그릴 수 있어요. 지우고 다시 그려주세요.");
     return;
   }
-
+  const point = eventPoint(event);
   state.drawing = true;
-  state.draftPoints = [endpoint, point];
+  state.draftPoints = [point];
   canvases.draw.setPointerCapture(event.pointerId);
-  updateEndpointGuide();
   renderArtwork(canvases.draw, state.currentDoc, {
     draftPoints: state.draftPoints,
     draftColorIndex: state.strokeColor,
   });
   document.querySelector("#drawStatus").textContent =
-    "손가락을 떼면 내 한 획이 준비돼요.";
+    "손가락을 떼면 이 한 붓이 끝나요.";
 }
 
 function extendStroke(event) {
@@ -1235,9 +1200,8 @@ function endStroke(event) {
   document.querySelector("#undoButton").disabled = !ready;
   document.querySelector("#commitButton").disabled = !ready;
   document.querySelector("#drawStatus").textContent = ready
-    ? "좋아요. 다시 그리거나 이 선을 건넬 수 있어요."
+    ? "한 붓이 준비됐어요. 이제 다른 사람에게 토스해요."
     : "조금 더 길게 그려주세요.";
-  updateEndpointGuide();
 }
 
 function resetDraftStroke() {
@@ -1247,8 +1211,7 @@ function resetDraftStroke() {
   document.querySelector("#undoButton").disabled = true;
   document.querySelector("#commitButton").disabled = true;
   document.querySelector("#drawStatus").textContent =
-    "내 선만 지웠어요. 빛나는 점에서 다시 시작해 주세요.";
-  updateEndpointGuide();
+    "내 한 붓을 지웠어요. 캔버스 어디서든 다시 시작하세요.";
 }
 
 function commitDraftStroke() {
