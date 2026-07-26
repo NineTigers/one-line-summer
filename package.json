@@ -1,0 +1,18 @@
+{
+  "name": "one-line-summer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "여름 밑그림에 한 붓을 그리고 링크로 친구에게 토스하는 비게임 미니앱",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@apps-in-toss/web-framework": "^2.10.7"
+  },
+  "devDependencies": {
+    "vite": "^8.1.5"
+  }
+}

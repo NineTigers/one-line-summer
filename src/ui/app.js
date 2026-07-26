@@ -1,9 +1,18 @@
+import {
+  anonymousKey,
+  logClick,
+  logScreen,
+  tossShare,
+  tossShareLink,
+} from "../bridge.js";
+
 const CANVAS_WIDTH = 720;
 const CANVAS_HEIGHT = 900;
 const FORMAT_VERSION = 5;
 const MAX_STROKES = 12;
 const MAX_POINTS = 84;
 const STORAGE_KEY = "one-line-summer-nodes-v5";
+const ANON_KEY_STORAGE = "one-line-summer-anon-key";
 const LINK_PARAM = "d";
 
 const PALETTES = [
@@ -38,14 +47,14 @@ const THEMES = [
     id: "sunset-beach",
     name: "선셋 비치",
     note: "노을이 내려앉은 해변",
-    asset: "./assets/theme-sunset-beach.jpg",
+    asset: "/assets/theme-sunset-beach.jpg",
     palette: 2,
   },
   {
     id: "bingsu-shop",
     name: "여름 빙수집",
     note: "햇살을 피해 들어온 오후",
-    asset: "./assets/theme-bingsu-shop.jpg",
+    asset: "/assets/theme-bingsu-shop.jpg",
     palette: 0,
   },
   {
@@ -59,28 +68,28 @@ const THEMES = [
     id: "han-river-picnic",
     name: "한강 피크닉",
     note: "강바람 부는 오후",
-    asset: "./assets/theme-han-river-picnic.jpg",
+    asset: "/assets/theme-han-river-picnic.jpg",
     palette: 0,
   },
   {
     id: "green-valley",
     name: "초록 계곡",
     note: "햇살 비치는 맑은 물",
-    asset: "./assets/theme-green-valley.jpg",
+    asset: "/assets/theme-green-valley.jpg",
     palette: 0,
   },
   {
     id: "monsoon-window",
     name: "장마 창가",
     note: "빗소리 듣는 한낮",
-    asset: "./assets/theme-monsoon-window.jpg",
+    asset: "/assets/theme-monsoon-window.jpg",
     palette: 1,
   },
   {
     id: "summer-fireworks",
     name: "여름밤 불꽃",
     note: "강변을 수놓은 밤",
-    asset: "./assets/theme-summer-fireworks.jpg",
+    asset: "/assets/theme-summer-fireworks.jpg",
     palette: 3,
   },
 ];
@@ -148,6 +157,21 @@ function showScreen(target) {
     top: 0,
     behavior: prefersReducedMotion() ? "auto" : "smooth",
   });
+}
+
+/**
+ * 화면 전환과 히스토리 항목.
+ *
+ * 이 앱은 한 페이지에서 섹션을 감추고 보이는 방식이라 히스토리에 항목을
+ * 직접 넣지 않으면 토스 안에서 뒤로가기 한 번에 앱이 종료된다. 비게임
+ * 출시 체크리스트가 모든 화면에서 뒤로가기 동작을 요구한다.
+ */
+function navigateTo(name, push = true) {
+  const entry = { screen: name };
+  if (push) window.history.pushState(entry, "");
+  else window.history.replaceState(entry, "");
+  showScreen(screens[name]);
+  logScreen(`one_line_summer_${name}`);
 }
 
 function showToast(message) {
@@ -274,7 +298,19 @@ function decodeDoc(token) {
   }
 }
 
+/**
+ * 그림 토큰을 쿼리와 프래그먼트 양쪽에서 읽는다.
+ *
+ * 웹 링크는 프래그먼트(`#d=`)를 쓴다. 토스 딥링크는 프래그먼트가
+ * deep_link_value를 거쳐 보존된다는 보장이 없어 쿼리(`?d=`)를 쓴다.
+ * 어느 쪽으로 들어와도 같은 그림이 열려야 한다.
+ */
 function readDocFromLocation() {
+  const search = new URLSearchParams(window.location.search).get(LINK_PARAM);
+  if (search) {
+    const fromSearch = decodeDoc(search);
+    if (fromSearch) return fromSearch;
+  }
   const hash = window.location.hash.replace(/^#/, "");
   return decodeDoc(new URLSearchParams(hash).get(LINK_PARAM));
 }
@@ -282,6 +318,7 @@ function readDocFromLocation() {
 function basePageUrl() {
   const url = new URL(window.location.href);
   url.hash = "";
+  url.searchParams.delete(LINK_PARAM);
   return url.href;
 }
 
@@ -289,12 +326,13 @@ function docLink(doc) {
   return `${basePageUrl()}#${LINK_PARAM}=${encodeDoc(doc)}`;
 }
 
+/** 주소만 바꾸고 히스토리 항목의 화면 정보는 그대로 둔다. */
 function replaceLocationWithDoc(doc) {
-  window.history.replaceState(null, "", docLink(doc));
+  window.history.replaceState(window.history.state, "", docLink(doc));
 }
 
 function clearLocationDoc() {
-  window.history.replaceState(null, "", basePageUrl());
+  window.history.replaceState(window.history.state, "", basePageUrl());
 }
 
 function loadStoredNodes() {
@@ -515,7 +553,7 @@ function resetShareUi() {
   document.querySelector("#copyStatus").textContent = "";
 }
 
-function renderInvite() {
+function renderInvite(push = true) {
   renderArtwork(canvases.invite, state.currentDoc);
   const hasStroke = state.currentDoc.strokes.length > 0;
   document.querySelector("#inviteEyebrow").textContent = hasStroke
@@ -524,10 +562,10 @@ function renderInvite() {
   document.querySelector("#inviteTitle").innerHTML = hasStroke
     ? "친구가 한 붓을 보냈어요<br />원하는 곳에 한 붓을 더해요"
     : "친구가 여름 배경을 골랐어요<br />첫 한 붓을 더해요";
-  showScreen(screens.invite);
+  navigateTo("invite", push);
 }
 
-function renderDraw() {
+function renderDraw(push = true) {
   const count = state.currentDoc.strokes.length;
   const palette = PALETTES[state.currentDoc.palette];
   state.draftPoints = [];
@@ -557,7 +595,7 @@ function renderDraw() {
   commitButton.textContent = "친구에게 토스하기";
   document.querySelector("#drawStatus").textContent =
     "캔버스 어디서든 시작할 수 있어요.";
-  showScreen(screens.draw);
+  navigateTo("draw", push);
 }
 
 function beginNew() {
@@ -571,13 +609,13 @@ function beginNew() {
   state.draftPoints = [];
   buildThemeOptions();
   clearLocationDoc();
-  showScreen(screens.setup);
+  navigateTo("setup");
 }
 
-function loadFromLocation() {
+function loadFromLocation(push = false) {
   const incomingDoc = readDocFromLocation();
   if (!incomingDoc) {
-    showScreen(screens.home);
+    navigateTo("home", push);
     return;
   }
 
@@ -586,7 +624,7 @@ function loadFromLocation() {
   state.actor = nextActor(incomingDoc);
   state.actorName = "다음 친구";
   saveNode(incomingDoc);
-  renderInvite();
+  renderInvite(push);
 }
 
 function eventPoint(event) {
@@ -734,13 +772,26 @@ function showShareFallback(link) {
   });
 }
 
-async function shareLinkWithPlatform(link) {
-  // Apps in Toss 번들에서는 이 경계에서 getTossShareLink()와 share()를
-  // 사용한다. 정적 체험판은 브라우저 공유와 클립보드로 같은 흐름을 검증한다.
+const SHARE_TEXT = "내 한 붓 위에 친구의 여름을 더해 주세요.";
+
+/**
+ * 링크 토스 경계.
+ *
+ * 토스 안이면 딥링크를 만들어 네이티브 공유 시트로 보낸다. 브릿지가 없는
+ * 브라우저에서는 시스템 공유와 클립보드로 같은 흐름을 검증한다.
+ * 어느 경로도 못 쓰면 링크를 직접 복사할 수 있게 `fallback`을 돌려준다.
+ */
+async function shareLinkWithPlatform(doc, link) {
+  const deepLink = await tossShareLink(encodeDoc(doc));
+  if (deepLink) {
+    const result = await tossShare(`${SHARE_TEXT}\n${deepLink}`);
+    if (result === "shared") return "shared";
+  }
+
   if (typeof navigator.share === "function") {
     await navigator.share({
       title: "한 줄 여름",
-      text: "내 한 붓 위에 친구의 여름을 더해 주세요.",
+      text: SHARE_TEXT,
       url: link,
     });
     return "shared";
@@ -767,7 +818,7 @@ async function shareArtwork(doc) {
     "공유할 앱을 준비하고 있어요.";
 
   try {
-    const result = await shareLinkWithPlatform(link);
+    const result = await shareLinkWithPlatform(doc, link);
     if (result === "shared") {
       showToast("공유를 마쳤어요.");
       document.querySelector("#drawStatus").textContent =
@@ -801,6 +852,7 @@ async function shareArtwork(doc) {
 
 async function commitAndShare() {
   if (state.sharing || !state.currentDoc) return;
+  logClick("one_line_summer_toss");
   const doc = state.strokeCommitted
     ? state.shareDoc || state.currentDoc
     : commitDraftStroke();
@@ -808,11 +860,57 @@ async function commitAndShare() {
   await shareArtwork(doc);
 }
 
+/**
+ * 익명 사용자 키.
+ *
+ * 비게임 출시 체크리스트가 사용자 식별자 저장을 필수로 요구한다. 토스
+ * 밖에서는 키를 받을 수 없고, 없어도 그리기와 링크 토스는 그대로 된다.
+ * 그림·링크와 함께 보내지 않고 기기에만 둔다.
+ */
+async function ensureAnonymousKey() {
+  try {
+    if (localStorage.getItem(ANON_KEY_STORAGE)) return;
+  } catch {
+    return; // 저장소를 못 쓰면 식별자도 남기지 않는다.
+  }
+
+  const result = await anonymousKey();
+  if (result.status !== "ok") return;
+
+  try {
+    localStorage.setItem(ANON_KEY_STORAGE, result.hash);
+  } catch {
+    // 저장 실패가 제품을 막지 않는다.
+  }
+}
+
+/** 뒤로가기로 돌아온 화면을 히스토리 항목을 늘리지 않고 되살린다. */
+function restoreScreen(name) {
+  if (name === "setup") {
+    buildThemeOptions();
+    navigateTo("setup", false);
+    return;
+  }
+  if (name === "draw" && state.currentDoc) {
+    renderDraw(false);
+    return;
+  }
+  if (name === "invite" && state.currentDoc) {
+    renderInvite(false);
+    return;
+  }
+  navigateTo("home", false);
+}
+
 buildThemeOptions();
 
-document.querySelector("#startButton").addEventListener("click", beginNew);
+document.querySelector("#startButton").addEventListener("click", () => {
+  logClick("one_line_summer_start");
+  beginNew();
+});
 
 document.querySelector("#createCanvasButton").addEventListener("click", () => {
+  logClick("one_line_summer_create_canvas");
   state.actor = "A";
   state.actorName = "나";
   state.currentDoc = createRootDoc();
@@ -821,6 +919,7 @@ document.querySelector("#createCanvasButton").addEventListener("click", () => {
 });
 
 document.querySelector("#acceptInviteButton").addEventListener("click", () => {
+  logClick("one_line_summer_accept_invite");
   state.actorName = "다음 친구";
   renderDraw();
 });
@@ -845,6 +944,12 @@ document.querySelector("#copyButton").addEventListener("click", async () => {
   else document.querySelector("#shareLink").select();
 });
 
-window.addEventListener("hashchange", loadFromLocation);
+window.addEventListener("popstate", (event) => {
+  restoreScreen(event.state?.screen);
+});
 
-loadFromLocation();
+// 프래그먼트가 바뀌면서 이미 히스토리 항목이 생기므로 여기서 더 넣지 않는다.
+window.addEventListener("hashchange", () => loadFromLocation(false));
+
+ensureAnonymousKey();
+loadFromLocation(false);
