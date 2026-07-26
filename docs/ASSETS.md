@@ -4,12 +4,12 @@
 
 | 파일 | 런타임 용도 |
 | --- | --- |
-| `theme-sunset-beach.jpg` | 노을 해변 테마 선택 카드·Canvas 배경·PNG 저장 |
-| `theme-bingsu-shop.jpg` | 여름 빙수집 테마 선택 카드·Canvas 배경·PNG 저장 |
-| `theme-han-river-picnic.jpg` | 한강 피크닉 테마 선택 카드·Canvas 배경·PNG 저장 |
-| `theme-green-valley.jpg` | 초록 계곡 테마 선택 카드·Canvas 배경·PNG 저장 |
-| `theme-monsoon-window.jpg` | 장마 창가 테마 선택 카드·Canvas 배경·PNG 저장 |
-| `theme-summer-fireworks.jpg` | 여름밤 불꽃 테마 선택 카드·Canvas 배경·PNG 저장 |
+| `theme-sunset-beach.jpg` | 노을 해변 테마 선택 카드·Canvas 배경 |
+| `theme-bingsu-shop.jpg` | 여름 빙수집 테마 선택 카드·Canvas 배경 |
+| `theme-han-river-picnic.jpg` | 한강 피크닉 테마 선택 카드·Canvas 배경 |
+| `theme-green-valley.jpg` | 초록 계곡 테마 선택 카드·Canvas 배경 |
+| `theme-monsoon-window.jpg` | 장마 창가 테마 선택 카드·Canvas 배경 |
+| `theme-summer-fireworks.jpg` | 여름밤 불꽃 테마 선택 카드·Canvas 배경 |
 
 - `하얀 캔버스`는 이미지 자산 없이 Canvas에 `#ffffff`를 직접
   칠해 선택 화면·미리보기·완성 PNG까지 순백색으로 유지한다.
