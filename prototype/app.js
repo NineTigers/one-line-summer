@@ -62,7 +62,37 @@ const THEMES = [
     asset: null,
     palette: 0,
   },
+  {
+    id: "han-river-picnic",
+    name: "한강 피크닉",
+    note: "강바람 부는 오후",
+    asset: "./assets/theme-han-river-picnic.jpg",
+    palette: 0,
+  },
+  {
+    id: "green-valley",
+    name: "초록 계곡",
+    note: "햇살 비치는 맑은 물",
+    asset: "./assets/theme-green-valley.jpg",
+    palette: 0,
+  },
+  {
+    id: "monsoon-window",
+    name: "장마 창가",
+    note: "빗소리 듣는 한낮",
+    asset: "./assets/theme-monsoon-window.jpg",
+    palette: 1,
+  },
+  {
+    id: "summer-fireworks",
+    name: "여름밤 불꽃",
+    note: "강변을 수놓은 밤",
+    asset: "./assets/theme-summer-fireworks.jpg",
+    palette: 3,
+  },
 ];
+
+const THEME_DISPLAY_ORDER = [0, 1, 3, 4, 5, 6, 2];
 
 const THEME_IMAGES = THEMES.map((theme) => {
   if (!theme.asset) return null;
@@ -618,7 +648,8 @@ function renderArtwork(canvas, doc, options = {}) {
 function buildThemeOptions() {
   const group = document.querySelector("#themeGroup");
   group.replaceChildren();
-  THEMES.forEach((theme, index) => {
+  THEME_DISPLAY_ORDER.forEach((index) => {
+    const theme = THEMES[index];
     const label = document.createElement("label");
     label.className = "theme-option";
 
