@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8">
+<title>한 줄 여름 아이콘</title>
+<style>html,body{margin:0;padding:0;width:600px;height:600px;overflow:hidden}svg{display:block}</style>
+<!--
+  한 붓으로 그린 여름 수평선.
+  콘솔 규격은 600x600 PNG, 투명 배경 금지다. 그래서 배경은 불투명 노을이다.
+  축소해도 형태가 남도록 굵은 선과 단순한 도형만 쓰고 문자를 넣지 않는다.
+-->
+<svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD9A0"/>
+      <stop offset="0.55" stop-color="#FBB07A"/>
+      <stop offset="1" stop-color="#F2916B"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="600" fill="url(#sky)"/>
+  <circle cx="300" cy="248" r="86" fill="#FFF3D6"/>
+
+  <!-- 한 붓: 왼쪽에서 들어와 물결을 그리고 위로 튀어 오르며 끝난다 -->
+  <path
+    d="M64 430 C142 386 190 470 268 434 C346 398 394 482 472 446 C512 428 536 392 546 344"
+    fill="none"
+    stroke="#8A4272"
+    stroke-linecap="round"
+    stroke-width="46"
+  />
+</svg>
