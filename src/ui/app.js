@@ -7,6 +7,7 @@ import {
   readTokens,
   reducePoints,
 } from "../link.js";
+import { hasSeenBefore } from "../lineage.js";
 import { openThemeOrder } from "../season.js";
 import {
   anonymousKey,
@@ -163,6 +164,8 @@ const state = {
   draftPoints: [],
   drawing: false,
   strokeCommitted: false,
+  // 전에 본 그림이 이어져 돌아왔는지. 화면 문구와 지표가 함께 쓴다.
+  returning: false,
   sharing: false,
   shareDoc: null,
   toastTimer: null,
@@ -346,19 +349,11 @@ function decodeDoc(token) {
 }
 
 /**
- * 그림 토큰을 쿼리와 프래그먼트 양쪽에서 읽는다.
+ * 주소에서 그림을 편다.
  *
- * 웹 링크는 프래그먼트(`#d=`)를 쓴다. 토스 딥링크는 프래그먼트가
- * deep_link_value를 거쳐 보존된다는 보장이 없어 쿼리(`?d=`)를 쓴다.
- * 어느 쪽으로 들어와도 같은 그림이 열려야 한다.
- */
-function readLinkToken() {
-  return readTokens(window.location.search, window.location.hash)[0] || null;
-}
-
-/**
- * 링크가 잘렸거나 알아볼 수 없으면 `null`을 돌려주고 그 사실을 남긴다.
- * 부르는 쪽은 막힌 화면 대신 첫 화면을 보여준다.
+ * 토큰이 어디에 실려 오는지는 `readTokens`가 안다. 링크가 잘렸거나
+ * 알아볼 수 없으면 `null`을 돌려주고 그 사실을 남긴다. 부르는 쪽은
+ * 막힌 화면 대신 첫 화면을 보여준다.
  */
 function readDocFromLocation() {
   const tokens = readTokens(window.location.search, window.location.hash);
@@ -632,6 +627,10 @@ function renderInvite(push = true) {
     eyebrow.textContent = "가득 찬 그림이 도착했어요";
     title.innerHTML = "여기까지 함께 그렸어요<br />새 그림을 시작해 보세요";
     action.textContent = "새 그림 시작하기";
+  } else if (state.returning) {
+    eyebrow.textContent = "그림이 돌아왔어요";
+    title.innerHTML = "친구가 한 붓을 더했어요<br />이어서 한 붓 더 그려요";
+    action.textContent = "한 붓 더하기";
   } else {
     eyebrow.textContent = hasStroke
       ? "한 붓이 도착했어요"
@@ -681,6 +680,7 @@ function renderDraw(push = true) {
 function beginNew() {
   state.currentDoc = null;
   state.incoming = false;
+  state.returning = false;
   state.actor = "A";
   state.actorName = "나";
   state.palette = THEMES[0].palette;
@@ -692,11 +692,26 @@ function beginNew() {
   navigateTo("setup");
 }
 
-function loadFromLocation(push = false) {
+function loadFromLocation(push = false, isEntry = false) {
   const incomingDoc = readDocFromLocation();
+
   if (!incomingDoc) {
+    if (isEntry) logEvent("summer_entry_viewed", { entry_type: "direct" });
     navigateTo("home", push);
     return;
+  }
+
+  /*
+   * 저장된 그림을 먼저 본다. `saveNode` 뒤에 보면 방금 넣은 그림 때문에
+   * 무조건 재방문으로 잡힌다.
+   */
+  state.returning = hasSeenBefore(loadStoredNodes(), incomingDoc);
+
+  if (isEntry) {
+    logEvent("summer_entry_viewed", {
+      entry_type: state.returning ? "returned" : "shared",
+      depth: incomingDoc.strokes.length,
+    });
   }
 
   state.currentDoc = incomingDoc;
@@ -782,7 +797,9 @@ function endStroke(event) {
   document.querySelector("#undoButton").disabled = !ready;
   document.querySelector("#commitButton").disabled = !ready;
   document.querySelector("#drawStatus").textContent = ready
-    ? "한 붓이 준비됐어요. 친구에게 바로 토스할 수 있어요."
+    ? state.incoming
+      ? "한 붓이 준비됐어요. 보내준 친구에게 돌려줄 수 있어요."
+      : "한 붓이 준비됐어요. 친구에게 바로 토스할 수 있어요."
     : "조금 더 길게 그려주세요.";
 }
 
@@ -1054,10 +1071,6 @@ window.addEventListener("popstate", (event) => {
 // 프래그먼트가 바뀌면서 이미 히스토리 항목이 생기므로 여기서 더 넣지 않는다.
 window.addEventListener("hashchange", () => loadFromLocation(false));
 
-logEvent("summer_entry_viewed", {
-  entry_type: readLinkToken() ? "shared" : "direct",
-});
-
 /*
  * 서버 시각이 오면 밑그림 목록을 다시 그린다. 배경 선택 화면을 보고
  * 있는 중에도 조용히 갱신된다.
@@ -1073,4 +1086,4 @@ now().then((at) => {
   buildThemeOptions();
 });
 ensureAnonymousKey();
-loadFromLocation(false);
+loadFromLocation(false, true);

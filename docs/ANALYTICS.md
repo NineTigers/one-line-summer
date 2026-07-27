@@ -28,6 +28,20 @@
 이 제품은 한 붓이 다음 사람에게 넘어갈 때만 성립한다. 받은 사람이
 이어 그리고 멈추면 릴레이가 끊긴 것이다.
 
+### 재방문
+
+`entry_type=returned` 비율
+
+받은 사람이 이어 그려 **보낸 사람에게 돌려주면** 원래 사람이 다시
+들어온다. 메신저가 알림 역할을 하므로 백엔드도 푸시 권한도 필요 없다.
+이것이 이 제품의 재방문 경로다.
+
+전에 본 그림이 이어져 돌아왔는지는 기기에 저장된 그림과 앞부분을
+맞춰 판별한다(`src/lineage.js`). 링크에는 아무것도 더하지 않는다.
+
+`returned`가 낮으면 왕복이 아니라 한 방향으로만 흐르고 있다는 뜻이다.
+릴레이는 이어져도 재방문은 생기지 않는다.
+
 ### 대표 전환
 
 `summer_toss_result` 의 `result=shared`
@@ -57,7 +71,7 @@
 
 | 이벤트 | 종류 | 시점 | 속성 |
 | --- | --- | --- | --- |
-| `summer_entry_viewed` | impression | 앱 진입 1회 | `entry_type`: direct/shared |
+| `summer_entry_viewed` | impression | 앱 진입 1회 | `entry_type`: direct/shared/**returned**, `depth` |
 | `summer_home_viewed` | screen | 첫 화면 | `depth` |
 | `summer_setup_viewed` | screen | 배경 선택 화면 | `depth` |
 | `summer_draw_viewed` | screen | 그리기 화면 | `depth` |
@@ -118,9 +132,9 @@
 
 ## 7. 아직 못 재는 것
 
-- **재방문.** 익명 키를 기기에 저장하지만 방문 시점을 기록하지 않는다.
-  8월 1차 심사가 재방문 기반인데 이 구조에는 재방문할 이유 자체가
-  없다. 제품 결정이 먼저다.
+- **누구에게 보냈는지.** 돌려준 것과 다른 사람에게 넘긴 것을 보내는
+  쪽에서는 구분할 수 없다. 받는 쪽의 `entry_type=returned`로 간접
+  확인한다.
 - **링크를 받은 사람이 원래 사람과 이어졌는지.** 백엔드가 없어 두
   기기의 이벤트를 연결할 수 없다. `depth`로 간접 추정만 한다.
 
