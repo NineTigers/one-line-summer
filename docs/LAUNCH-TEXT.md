@@ -36,23 +36,15 @@
 | 항목 | 값 |
 | --- | --- |
 | 앱 이름 | 한 줄 여름 |
-| `appName` (ID) | `one-line-summer` · 1순위 |
+| `appName` (ID) | **`one-line-summer`** · 확정 (2026-07-27) |
 | 앱 유형 | **비게임** |
 | 카테고리 | 취미·창작에 가장 가까운 항목. 콘솔 선택지를 보고 고른다 |
 
-`appName`은 등록 후 못 바꾼다. 딥링크 경로에도 쓰이므로 확정하면
-`granite.config.ts`와 `src/bridge.js`의 `APP_NAME`을 **둘 다** 바꾼다.
+콘솔 중복 확인을 통과했다. 코드의 두 곳(`granite.config.ts`,
+`src/bridge.js`)이 이미 이 값이고 번들도 그대로 만들어져 있다.
+**등록 후에는 바꿀 수 없다.**
 
-중복이면 아래 순서로 시도한다. 어느 것으로 정해지든 코드 두 곳을
-바꾸고 `npx ait build`를 다시 돌리면 된다.
-
-1. `one-line-summer`
-2. `summer-one-line`
-3. `one-line-summer-draw`
-4. `han-jul-summer`
-
-읽었을 때 무엇을 하는 앱인지 짐작되는 순서다. 숫자나 임의의 접미사는
-붙이지 않는다.
+딥링크가 `intoss://one-line-summer/?d=<토큰>`으로 나간다.
 
 카테고리는 콘솔 선택지가 문서에 없어서 미리 정하지 못한다. 그리기·창작
 쪽이 있으면 그것을, 없으면 취미·여가 계열을 고른다. 게임 계열 항목은

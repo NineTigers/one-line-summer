@@ -69,8 +69,8 @@ Vite 앱이다. `npm install && npm run dev`로 돈다.
   에서는 전부 조용히 건너뛰는 경로만 확인했다.
 - **실기기 증거 없음.** 두 기기 왕복을 한 번도 못 했다.
 - **사용자 증거 없음.** 플레이테스트 미실시.
-- 콘솔 등록 없음. `appName`은 임시값 `one-line-summer`다.
-- 콘솔 워크스페이스와 `appName`이 아직 확정되지 않았다. 정책 페이지는
+- 콘솔 등록 없음. `appName`은 `one-line-summer`로 확정됐다.
+- 콘솔 워크스페이스가 아직 만들어지지 않았다. 정책 페이지는
   https://ninetigers.github.io/one-line-summer/ 에 떠 있고 내용은 다
   채웠다.
 
@@ -108,8 +108,8 @@ Vite 앱이다. `npm install && npm run dev`로 돈다.
 3. ~~로고·썸네일·스크린샷~~ — `store/`에 규격대로 있다.
    `./store/make-assets.sh`로 다시 만든다
 4. ~~개인정보 처리방침·고객문의~~ — `site/`에 초안이 있다
-5. `appName` 콘솔 중복 확인. 확정하면 `granite.config.ts`와
-   `src/bridge.js`의 `APP_NAME`을 **둘 다** 바꾼다
+5. ~~`appName` 콘솔 중복 확인~~ — `one-line-summer`로 확정.
+   **등록 후에는 바꿀 수 없다**
 6. ~~`site/` 호스팅~~ — https://ninetigers.github.io/one-line-summer/ 에 떠 있다.
    `site/`를 밀면 GitHub Actions가 자동 배포한다
 7. ~~정책 페이지 내용~~ — 책임자 임인구, 문의 ygyim.biz@gmail.com.

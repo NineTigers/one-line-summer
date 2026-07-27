@@ -12,7 +12,13 @@
  *   share({ message: string }): Promise<void>
  */
 
-/** `granite.config.ts`의 appName과 반드시 같아야 한다. */
+/**
+ * 딥링크 경로에 쓰는 앱 ID.
+ *
+ * `granite.config.ts`의 `appName`과 반드시 같아야 한다. 한쪽만 바뀌면
+ * 링크를 받은 사람이 앱을 열지 못한다. 콘솔에 등록된 뒤로는 바꿀 수
+ * 없다.
+ */
 export const APP_NAME = "one-line-summer";
 
 let sdkPromise = null;
