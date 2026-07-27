@@ -1,15 +1,52 @@
 <!doctype html><meta charset="utf-8">
 <title>한 줄 여름 스크린샷 3</title>
 <!--
-  받은 그림 화면. 세 사람의 붓이 쌓인 링크로 들어온 상태다.
-  이력·분기·완성 판정을 노출하지 않는다는 기준이 화면에 보여야 한다.
+  그림이 돌아온 화면. 내가 보낸 그림에 친구가 한 붓을 더해 돌려준
+  상태다. 이 제품의 재방문 경로이자 보상 순간이라 마지막 장에 둔다.
+
+  돌아온 그림으로 보이려면 이 기기에 조상 그림이 남아 있어야 한다
+  (`src/lineage.js`). 캡처 순서에 기대지 않도록 여기서 직접 심는다.
+  심지 않으면 `친구가 한 붓을 보냈어요`로 나온다.
 -->
 <link rel="stylesheet" href="./screenshot.css" />
 
 <h1 class="caption">친구가 한 붓을 더해<br />다시 보내줘요</h1>
-<div class="frame">
-  <iframe
-    title="받은 그림 화면"
-    src="/?d=BgACAwIHggGhBPoBT4QCboQCX4QCbPoBW9wBQAQF-gHKAqABhwGcAYgBngGHAZ4BiAEDBa8B6QWiAlmsAlSsAlfCA0w"
-  ></iframe>
-</div>
+<div class="frame"><iframe id="app" title="돌아온 그림 화면"></iframe></div>
+
+<script>
+  // 앱과 같은 출처라 앱이 읽는 저장소에 그대로 쓴다. 캡처 전용이다.
+  const 조상 = [
+    {
+      version: 6,
+      id: "shot-root",
+      rootId: "shot-root",
+      parentId: null,
+      palette: 2,
+      prompt: 0,
+      strokes: [
+        {
+          id: "shot-s1",
+          actor: "A",
+          name: "나",
+          color: 2,
+          points: [
+            [130, 545],
+            [255, 505],
+            [385, 560],
+            [515, 512],
+            [645, 566],
+            [770, 520],
+            [880, 552],
+          ],
+        },
+      ],
+      finished: false,
+      createdAt: 1785000000000,
+    },
+  ];
+  localStorage.setItem("one-line-summer-nodes-v6", JSON.stringify(조상));
+
+  // 저장소를 채운 뒤에 앱을 띄운다.
+  document.querySelector("#app").src =
+    "/?d=BgACAwIHggGhBPoBT4QCboQCX4QCbPoBW9wBQAQF-gHKAqABhwGcAYgBngGHAZ4BiAEDBa8B6QWiAlmsAlSsAlfCA0w";
+</script>
