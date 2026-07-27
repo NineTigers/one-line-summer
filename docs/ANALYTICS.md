@@ -1,112 +1,149 @@
 # 한 줄 여름 분석 계획
 
-- 문서 상태: v5 활성 기준
+- 문서 상태: v5.1 활성 기준
 - 기준 제품: `docs/PRODUCT-SPEC.md`
-- 원칙: 공개되지 않은 심사 배점을 추측하지 않고 실제 공동 창작과
-  분기 공유가 일어나는지 측정한다.
+- 구현 위치: `src/bridge.js`, `src/ui/app.js`
+- 원칙: 공개되지 않은 심사 배점을 추측하지 않고 실제로 붓이 오가는지
+  측정한다.
+
+> **v5 초안에서 바뀐 이유.** 이전 판은 대표 전환이
+> `summer_branch_created`였다. 분기는 v5.1에서 공개 흐름에서 빠진
+> 기능이라 그 이벤트는 영원히 발생하지 않는다. 없는 기능을 재고
+> 있으면 8월 지표가 0으로 보인다. 지금 있는 제품 기준으로 다시 썼다.
 
 ## 1. 측정 질문
 
-1. 직접 진입한 사람이 설명 없이 첫 획을 남기는가?
-2. 받은 사람이 앞 선의 끝에서 자신의 한 획을 보태는가?
-3. 중간 선을 한 명이 아니라 여러 사람에게 실제로 보내는가?
-4. 같은 부모에서 서로 다른 가지가 두 개 이상 생기는가?
-5. 분기 비교가 새 공유나 새 획으로 이어지는가?
-6. 점수·보상 없이도 사용자가 결과 차이를 재미로 설명하는가?
+1. 직접 진입한 사람이 설명 없이 첫 붓을 남기는가?
+2. 한 붓을 저장한 사람이 실제로 토스까지 가는가?
+3. 받은 사람이 이어 그리고 **다시** 토스하는가?
+4. 릴레이가 몇 번째 붓까지 이어지는가?
+5. 링크가 깨져서 흐름이 끊기는 일이 얼마나 되는가?
 
 ## 2. 핵심 지표
 
 ### 제품 핵심 지표
 
-`분기된 공통 부모 수 / 실제 수신된 중간 선 수`
+`재토스율 = 받은 링크로 진입해 다시 토스한 수 / 받은 링크 진입 수`
 
-분기된 공통 부모는 서로 다른 자식 Node가 두 개 이상 생성된 부모다.
-같은 사람이 같은 요청을 재시도한 중복은 idempotency key로 제거한다.
+이 제품은 한 붓이 다음 사람에게 넘어갈 때만 성립한다. 받은 사람이
+이어 그리고 멈추면 릴레이가 끊긴 것이다.
+
+### 재방문
+
+`entry_type=returned` 비율
+
+받은 사람이 이어 그려 **보낸 사람에게 돌려주면** 원래 사람이 다시
+들어온다. 메신저가 알림 역할을 하므로 백엔드도 푸시 권한도 필요 없다.
+이것이 이 제품의 재방문 경로다.
+
+전에 본 그림이 이어져 돌아왔는지는 기기에 저장된 그림과 앞부분을
+맞춰 판별한다(`src/lineage.js`). 링크에는 아무것도 더하지 않는다.
+
+`returned`가 낮으면 왕복이 아니라 한 방향으로만 흐르고 있다는 뜻이다.
+릴레이는 이어져도 재방문은 생기지 않는다.
 
 ### 대표 전환
 
-`summer_branch_created`
+`summer_toss_result` 의 `result=shared`
 
-한 부모에 두 번째 고유 자식 Node가 저장되어 처음으로 분기가 성립한
-순간 한 번만 발생한다.
+버튼을 눌렀다는 것과 실제로 건네졌다는 것은 다르다. 클릭이 아니라
+공유 결과를 전환으로 센다.
+
+### 릴레이 깊이
+
+거의 모든 이벤트에 `depth`(그림에 쌓인 붓 수)를 붙인다. `depth`별
+`summer_toss_result` 분포가 릴레이가 어디서 끊기는지 보여준다.
+
+`depth`는 링크 길이의 상한(`MAX_STROKES` 12)에서 멈춘다. 실제 분포가
+상한에 닿기 시작하면 백엔드 없이는 더 못 간다는 신호다.
 
 ### 보조 지표
 
-- 직접 진입 → 첫 획 저장률
-- 공유 시작 → 링크 수신률
-- 링크 수신 → 다음 획 저장률
-- 중간 흐름 열람 → 중간 선 공유율
-- 분기 비교 → 새 한 획 또는 새 공유율
-- 네 획 경로 완성률
-
-`공유 버튼 클릭`은 실제 수신을 뜻하지 않는다. SDK 성공 응답과
-`entry_type=shared` 진입을 분리해 본다.
+- 직접 진입 → 배경 선택률
+- 배경 선택 → 첫 붓 저장률
+- 붓 저장 → 토스 성공률
+- 받은 링크 진입 → 이어 그리기 시작률
+- 깨진 링크 비율
 
 ## 3. 이벤트 사전
 
-이벤트 이름은 `summer_<object>_<action>` 형식을 쓴다.
+이름은 `summer_<object>_<action>` 형식을 쓴다. 아래가 구현된 전부다.
 
-| 이벤트 | 시점 | 허용 속성 |
-| --- | --- | --- |
-| `summer_entry_viewed` | 첫 진입 | `entry_type`: direct/shared/return |
-| `summer_seed_selected` | 빛·장면 선택 | `palette_key`, `prompt_key` |
-| `summer_stroke_started` | 유효 시작점 입력 | `depth`, `entry_type` |
-| `summer_stroke_saved` | 자식 Node 저장 성공 | `depth`, `author_slot`, `point_bucket` |
-| `summer_share_started` | 공유 UI 호출 | `depth`, `source_screen` |
-| `summer_shared_entry_viewed` | 공유 링크 진입 | `depth` |
-| `summer_flow_viewed` | 중간 흐름 열람 | `depth` |
-| `summer_midpoint_selected` | 중간 상태 선택 | `selected_depth`, `current_depth` |
-| `summer_branch_created` | 부모의 둘째 자식 저장 | `parent_depth` |
-| `summer_branches_compared` | 분기 비교 노출 | `branch_count_bucket`, `parent_depth` |
-| `summer_path_completed` | 완성 상태 저장 | `depth`, `participant_bucket` |
-| `summer_replay_started` | 순서 다시 보기 | `depth`, `reduced_motion` |
-| `summer_artwork_saved` | PNG 저장 시작 | `depth` |
-| `summer_error_shown` | 복구 가능한 오류 | `error_code`, `screen` |
+| 이벤트 | 종류 | 시점 | 속성 |
+| --- | --- | --- | --- |
+| `summer_entry_viewed` | impression | 앱 진입 1회 | `entry_type`: direct/shared/**returned**, `depth` |
+| `summer_home_viewed` | screen | 첫 화면 | `depth` |
+| `summer_setup_viewed` | screen | 배경 선택 화면 | `depth` |
+| `summer_draw_viewed` | screen | 그리기 화면 | `depth` |
+| `summer_invite_viewed` | screen | 받은 그림 화면 | `depth` |
+| `summer_start_tapped` | click | `첫 한 붓 그리기` | — |
+| `summer_theme_selected` | click | 배경 골라 캔버스 생성 | `theme_key` |
+| `summer_invite_accepted` | click | `한 붓 더하기` | `depth` |
+| `summer_stroke_started` | impression | 캔버스에 첫 점 | `depth` |
+| `summer_stroke_saved` | impression | 한 붓 저장 | `depth` |
+| `summer_toss_tapped` | click | `친구에게 토스하기` | `depth` |
+| `summer_toss_result` | impression | 공유 종료 | `result`, `depth` |
+| `summer_link_broken` | impression | 링크 해독 실패 | — |
+
+`summer_toss_result`의 `result`:
+
+| 값 | 뜻 |
+| --- | --- |
+| `shared` | 토스 또는 시스템 공유 시트로 건넸다 |
+| `copied` | 공유 시트가 없어 링크를 복사했다 |
+| `fallback` | 복사도 실패해 직접 복사 입력창을 보였다 |
+| `cancelled` | 사용자가 공유를 닫았다 |
 
 ## 4. 금지 속성
 
+- 그림 좌표와 붓의 모양
+- 공유 링크와 토큰 값
+- 익명 키
 - 표시 이름과 직접 입력 문구
-- 원본 좌표 배열
-- 공개 토큰·URL
-- 익명 키·내부 사용자 해시
 - IP·기기 광고 식별자
 - 정확한 시각이나 위치
-- 사용자가 그린 모양을 추론한 라벨
+
+`depth`와 `theme_key`는 그림 내용을 담지 않는다.
 
 ## 5. 퍼널
 
 ### 생성 퍼널
 
-`direct entry → seed selected → first stroke saved → share started`
+`entry_viewed(direct) → start_tapped → theme_selected → stroke_saved
+→ toss_result(shared)`
 
 ### 수신 퍼널
 
-`shared entry → stroke started → child saved`
+`entry_viewed(shared) → invite_accepted → stroke_saved
+→ toss_result(shared)`
 
-### 분기 퍼널
-
-`midpoint selected → share started → 2+ shared entries → branch created → branches compared`
-
-### 완성 퍼널
-
-`first stroke → second participant → four strokes → path completed → replay/save`
+**수신 퍼널의 마지막 칸이 이 제품의 전부다.** 여기서 끊기면 릴레이가
+아니라 일회성 그림 전송이다.
 
 ## 6. 해석 규칙
 
 - 로컬 프로토타입 이벤트는 제품 지표에 합치지 않는다.
-- 샌드박스 SDK 성공을 실제 공유 성공으로 간주하지 않는다.
-- 분기 수를 인기나 품질 점수로 쓰지 않는다.
+- 브릿지가 없는 브라우저에서는 이벤트가 아예 나가지 않는다. 웹에서
+  본 수치를 토스 안 수치로 쓰지 않는다.
+- `summer_toss_tapped`을 공유 성공으로 읽지 않는다.
 - 한 사용자의 반복 새로고침을 별도 참여로 세지 않는다.
 - 지표 상승이 스팸 공유나 원치 않는 압박에서 왔는지 정성 인터뷰로
   함께 확인한다.
 
-## 7. 출시 판정용 최소 표본
+## 7. 아직 못 재는 것
+
+- **누구에게 보냈는지.** 돌려준 것과 다른 사람에게 넘긴 것을 보내는
+  쪽에서는 구분할 수 없다. 받는 쪽의 `entry_type=returned`로 간접
+  확인한다.
+- **링크를 받은 사람이 원래 사람과 이어졌는지.** 백엔드가 없어 두
+  기기의 이벤트를 연결할 수 없다. `depth`로 간접 추정만 한다.
+
+## 8. 출시 판정용 최소 표본
 
 정량 통계가 아니라 방향 결정을 위한 초기 표본으로 다섯 그룹을 쓴다.
 
-- 네 그룹 이상: 첫 획과 수신 획 무설명 완료
-- 세 그룹 이상: 같은 중간 선을 두 명 이상에게 전송
-- 세 그룹 이상: 분기 비교 후 결과 차이를 자발적으로 말함
+- 네 그룹 이상: 첫 붓과 이어 그리기를 설명 없이 완료
+- 세 그룹 이상: 받은 뒤 실제로 다시 토스
 - 두 그룹 이하: 받은 링크가 부담스럽다고 응답
 
 표본이 작으므로 퍼센트만 보고 우승 가능성을 주장하지 않는다.

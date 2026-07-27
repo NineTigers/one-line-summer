@@ -13,7 +13,7 @@
 토스하면, 받은 친구가 한 붓을 더해 다시 건네는 비게임 미니앱이다.
 2026년 7월 앱인토스 바이브코딩 챌린지 출품작이다.
 
-**정적 프로토타입은 돌아간다. 백엔드는 없다. 실기기 증거도 없다.**
+**Vite 앱과 `.ait` 번들은 나온다. 백엔드는 없다. 실기기 증거도 없다.**
 
 ## 1. 마감과 심사 구조
 
@@ -45,28 +45,34 @@
 
 ### 되는 것
 
-`prototype/`은 인터랙티브 정적 프로토타입이다. 서버 없이 돈다.
+Vite 앱이다. `npm install && npm run dev`로 돈다.
 
-```bash
-python3 -m http.server 4184 --bind 127.0.0.1 --directory prototype
-```
-
-- 화면 5개: `homeScreen` `setupScreen` `drawScreen` `handoffScreen`
-  `inviteScreen`
+- 화면 4개: `homeScreen` `setupScreen` `inviteScreen` `drawScreen`
 - 여름 테마 7종 (밑그림 이미지 6장 + 하얀 캔버스)
 - 캔버스 어디서든 시작하는 한 붓 입력, 두 번째 붓 차단, 다시 그리기
 - 링크 생성·복사, 받은 링크로 이어 그리기
 - 390×844 / 320×760, reduced motion 대응
+- `npx ait build` → `one-line-summer.ait` (압축 해제 23MB)
+- `pushState`/`popstate` 화면 히스토리. 모든 화면에서 뒤로가기가
+  앱을 종료하지 않는다
+- `src/bridge.js`에 익명 키·딥링크·공유·Analytics 연결
 
 ### 안 되는 것
 
-- **백엔드 없음.** 그림 상태를 URL fragment(`#d=...`)와
-  `localStorage`(`one-line-summer-nodes-v5`)에 담는다. `fetch` 호출이
-  코드에 0건이다.
-- **Apps in Toss SDK 미연동.** 익명 키·공유·딥링크·내비게이션 없음.
+- **백엔드 없음.** 그림 상태를 URL(`#d=` 웹 / `?d=` 딥링크)과
+  `localStorage`(`one-line-summer-nodes-v6`)에 담는다. `fetch` 호출이
+  코드에 0건이다. 인코딩을 접어 12붓 최악값이 2000자 미만이지만
+  (`src/link.js`, `test/link.test.mjs`), 12붓을 넘기려면 백엔드가
+  필요하다.
+- **SDK 실호출 미검증.** 코드는 연결했으나 토스 앱 안에서 익명 키·
+  딥링크·공유·Analytics가 실제로 응답하는지 한 번도 못 봤다. 브라우저
+  에서는 전부 조용히 건너뛰는 경로만 확인했다.
 - **실기기 증거 없음.** 두 기기 왕복을 한 번도 못 했다.
 - **사용자 증거 없음.** 플레이테스트 미실시.
-- `.ait` 번들 없음. 콘솔 등록 없음.
+- 콘솔 등록 없음. `appName`은 `one-line-summer`로 확정됐다.
+- 콘솔 워크스페이스가 아직 만들어지지 않았다. 정책 페이지는
+  https://ninetigers.github.io/one-line-summer/ 에 떠 있고 내용은 다
+  채웠다.
 
 ### 저장소 지도
 
@@ -78,9 +84,16 @@ python3 -m http.server 4184 --bind 127.0.0.1 --directory prototype
 | `docs/TECHNICAL-PLAN.md` | Supabase 스키마 초안 |
 | `docs/PLAYTEST-PLAN.md` | 5그룹 검증 설계 |
 | `docs/DIRECTION-REVIEW-V5.md` | 왜 이 방향인지의 근거 |
+| `docs/TEST-SCRIPT.md` | 수동 테스트 절차 |
 | `docs/history/`, `docs/CONCEPT-V3-*` | 폐기된 v1~v4 |
-| `prototype/` | 정적 구현 |
-| `store/` | **V3 시절 스크린샷. 출품에 쓰지 않는다** |
+| `index.html` | Vite 진입점 |
+| `src/ui/` | 화면·그리기 구현 |
+| `src/bridge.js` | Apps in Toss SDK 얇은 감싸개 |
+| `public/assets/` | 밑그림 6장. 번들에 들어간다 |
+| `granite.config.ts` | `appName`·브랜드·권한 |
+| `store/` | 콘솔 지면 자산과 재생성 스크립트 |
+| `site/` | 개인정보 처리방침·고객문의. 앱 번들에 안 들어간다 |
+| `docs/history/assets-v3/` | **V3 시절 자산. 출품에 쓰지 않는다** |
 
 ## 4. 다음 작업 (우선순위)
 
@@ -89,24 +102,45 @@ python3 -m http.server 4184 --bind 127.0.0.1 --directory prototype
 7/29에 필요한 건 `.ait` 번들 하나다. 백엔드가 없어도 등록은 된다.
 **등록을 백엔드 뒤로 미루지 말 것.**
 
-1. Apps in Toss SDK 연동 (5절 참고. 자매 프로젝트에서 이미 뚫었다)
-2. `appName` 콘솔 확정, 아이콘·썸네일·스크린샷 제작
-3. 개인정보 처리방침·고객문의 페이지
-4. `.ait` 빌드 → 콘솔 등록
+1. ~~Apps in Toss SDK 연동~~ — 코드 연결 완료(2026-07-26). 실기기
+   확인은 아직이다
+2. ~~`.ait` 빌드~~ — `npx ait build`로 나온다
+3. ~~로고·썸네일·스크린샷~~ — `store/`에 규격대로 있다.
+   `./store/make-assets.sh`로 다시 만든다
+4. ~~개인정보 처리방침·고객문의~~ — `site/`에 초안이 있다
+5. ~~`appName` 콘솔 중복 확인~~ — `one-line-summer`로 확정.
+   **등록 후에는 바꿀 수 없다**
+6. ~~`site/` 호스팅~~ — https://ninetigers.github.io/one-line-summer/ 에 떠 있다.
+   `site/`를 밀면 GitHub Actions가 자동 배포한다
+7. ~~정책 페이지 내용~~ — 책임자 임인구, 문의 ygyim.biz@gmail.com.
+   개인 개발자 운영이라 사업자 표기는 넣지 않았다
+8. 콘솔 등록
 
 ### P1 — 제품이 실제로 성립하려면
 
-5. Supabase 백엔드. 지금은 링크에 그림이 통째로 들어가서 붓이
-   늘수록 URL이 길어진다. 실사용에서 깨진다.
+5. Supabase 백엔드. 링크에 그림이 통째로 들어가는 구조는 그대로다.
+   인코딩을 접어 12붓까지는 버티게 했지만 그 이상은 못 간다.
 6. 두 기기 왕복 검증
 7. 5그룹 플레이테스트
 
-### 8월 지표 관점에서 비어 있는 것
+### 8월 지표
 
-현재 구조에는 **재방문 이유가 없다.** 한 붓 그리고 링크를 보내면
-끝이고, 상대가 이어 그려도 원래 사람에게 알릴 방법이 없다.
-1차 심사가 8월 지표인데 이게 비어 있다는 점을 제품 책임자와
-반드시 상의할 것.
+재방문 경로는 **받은 사람이 돌려주는 것**이다. B가 이어 그려 A에게
+다시 토스하면 A는 메신저 알림을 받고 들어온다. 백엔드도 푸시 권한도
+필요 없다.
+
+2026-07-27에 세 가지를 붙였다.
+
+- 돌아온 그림은 `그림이 돌아왔어요`로 맞이한다
+- 받은 사람이 한 붓을 저장할 때 돌려줄 수 있다고 귀띔한다
+- 돌아온 진입을 `entry_type=returned`로 구분해 잰다
+
+판별은 기기에 저장된 그림과 앞부분을 맞춰 한다(`src/lineage.js`).
+링크에는 아무것도 더하지 않았다.
+
+**아직 검증되지 않았다.** 실제로 돌려주는지는 플레이테스트 E단계에서
+본다. `returned` 비율이 낮으면 릴레이는 이어져도 재방문은 안 생기는
+것이고, 그때는 알림이 필요하다. 알림에는 백엔드가 든다.
 
 ## 5. 자매 프로젝트에서 이미 확인한 것
 
@@ -173,11 +207,19 @@ npx ait build                              # .ait 아티팩트 생성
 
 ## 6. 알려진 문서 드리프트
 
-- `docs/WORK-PLAN.md` §1 `현재 완료`에 분기 비교, 네 획 완성, 순서
-  재생, PNG 저장이 완료로 적혀 있다. **이 기능들은 만들어졌다가
-  v5.1에서 공개 흐름에서 제거됐다.** 현재 프로토타입에 없다.
-  `docs/PRODUCT-SPEC.md` §5 `제외`가 맞는 상태다.
-- `store/`의 PNG 3장은 폐기된 V3 릴레이 시안이다. 출품에 쓰지 않는다.
+2026-07-27에 아래를 정리했다. 남은 것만 적는다.
+
+- ~~`docs/WORK-PLAN.md` 완료 목록~~ 정정함.
+- ~~`docs/RISKS-AND-GATES.md` G1·G4~~ 정정함. 제거된 분기 기능을
+  완료로 체크하고 있었다.
+- ~~`docs/ANALYTICS.md`~~ 다시 씀. 대표 전환이
+  `summer_branch_created`였는데, 분기는 v5.1에서 빠진 기능이라 영원히
+  발생하지 않는 이벤트였다.
+- ~~`store/`의 V3 PNG~~ `docs/history/assets-v3/`로 옮김.
+- `docs/TECHNICAL-PLAN.md`는 Supabase 스키마 초안이고 분기 저장을
+  전제한다. 백엔드를 실제로 붙일 때 v5.1 기준으로 다시 봐야 한다.
+- `docs/PLAYTEST-PLAN.md`도 분기 비교 과업이 남아 있을 수 있다.
+  5그룹 테스트를 돌리기 전에 확인할 것.
 - `docs/INQUIRY-DRAFT.md`는 발송 보류된 역사 문서다.
 
 ## 7. 과장하지 말 것

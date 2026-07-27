@@ -2,7 +2,15 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      비게임 출시 체크리스트가 지도처럼 꼭 필요한 경우가 아니면 제스처
+      확대를 막도록 요구한다. 캔버스에 손가락으로 그리는 앱이라 핀치가
+      열려 있으면 그리는 도중 화면이 확대된다.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <meta name="theme-color" content="#ffffff" />
     <title>한 줄 여름</title>
     <meta
@@ -15,8 +23,8 @@
       content="여름 배경에 한 붓을 더해 친구에게 토스해요."
     />
     <meta property="og:type" content="website" />
-    <link rel="preload" as="image" href="./assets/theme-sunset-beach.jpg" />
-    <link rel="stylesheet" href="./styles.css?v=12" />
+    <link rel="preload" as="image" href="/assets/theme-sunset-beach.jpg" />
+    <link rel="stylesheet" href="/src/ui/styles.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -35,7 +43,7 @@
 
         <div class="hero-art" aria-hidden="true">
           <img
-            src="./assets/theme-sunset-beach.jpg"
+            src="/assets/theme-sunset-beach.jpg"
             alt=""
             width="720"
             height="900"
@@ -167,6 +175,6 @@
       <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
     </main>
 
-    <script src="./app.js?v=12"></script>
+    <script type="module" src="/src/ui/app.js"></script>
   </body>
 </html>

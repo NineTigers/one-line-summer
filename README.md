@@ -11,10 +11,10 @@
 | 제품 유형 | 비게임 한 붓 공동 창작·링크 릴레이 |
 | 활성 제품 기준 | `docs/PRODUCT-SPEC.md` v5.1 |
 | 앱인토스 유형 | 비게임 |
-| `appName` | 콘솔 중복 확인 전 미확정 |
+| `appName` | `one-line-summer` · 콘솔 중복 확인 전 임시 |
 | 공모전 | 2026년 7월 앱인토스 바이브코딩 챌린지 |
 | 기획 판정 | `PASS_WITH_RISK` · 실제 사용자 공유 검증 필요 |
-| 현재 산출물 | V5.2 토스형 인터랙티브 정적 프로토타입 |
+| 현재 산출물 | Vite 앱 + `.ait` 번들 · 실기기 미검증 |
 
 ## 한 문장 약속
 
@@ -32,24 +32,38 @@
 - 다른 출품 앱과 코드·사용자 데이터·배포를 공유하지 않는다.
 - Codex 앱 자동화 기능은 사용하지 않는다.
 
-## 현재 브라우저 체험판
+## 실행
 
 ```bash
-python3 -m http.server 4184 --bind 127.0.0.1 --directory prototype
+npm install && npm run dev
 ```
 
-실행 후 `http://127.0.0.1:4184/`에서 다음 흐름을 확인한다.
+`http://localhost:5173/`에서 다음 흐름을 확인한다.
 
 1. 첫 선 만들기
 2. `친구에게 토스하기` 한 번으로 저장·공유하기
 3. 받은 그림 위에 한 붓 더하기
 4. 새 그림을 다시 토스하기
 
-`prototype/`의 그림 데이터는 URL fragment와 브라우저
-`localStorage`를 쓰는 검증용 구현이다. 시스템 공유를 지원하는
-브라우저에서는 공유 창을 열고, 지원하지 않으면 링크 복사를 시도한다.
-다른 사람의 기기에서 실제로 이어지는 출시 버전은 Supabase와 Apps in
-Toss의 `getTossShareLink()`·`share()` 연동이 필요하다.
+## 번들 빌드
+
+```bash
+npx ait build
+```
+
+웹 산출물은 `dist/web/`, 콘솔에 올릴 번들은 `one-line-summer.ait`이다.
+
+## 아직 링크에 그림이 통째로 들어간다
+
+그림 데이터는 URL과 브라우저 `localStorage`에만 있다. 웹 링크는
+프래그먼트(`#d=`), 토스 딥링크는 쿼리(`?d=`)를 쓰고 앱은 양쪽을 모두
+읽는다. 붓이 늘수록 링크가 길어지므로 실사용 전에 Supabase 저장으로
+옮겨야 한다.
+
+Apps in Toss의 `getAnonymousKey()`·`getTossShareLink()`·`share()`·
+`Analytics`는 `src/bridge.js`에 연결돼 있으나 **토스 실기기에서 한 번도
+확인하지 않았다.** 브릿지가 없으면 조용히 브라우저 공유·클립보드로
+넘어간다.
 
 ## 문서
 
@@ -60,18 +74,24 @@ Toss의 `getTossShareLink()`·`share()` 연동이 필요하다.
 - [작업 계획](docs/WORK-PLAN.md)
 - [플레이테스트 계획](docs/PLAYTEST-PLAN.md)
 - [분석 계획](docs/ANALYTICS.md)
+- [콘솔 등록 문안](docs/LAUNCH-TEXT.md)
 - [위험과 게이트](docs/RISKS-AND-GATES.md)
 - [결정 기록](docs/DECISIONS.md)
 - [공식 출처](docs/OFFICIAL-SOURCES.md)
+- [수동 테스트 절차](docs/TEST-SCRIPT.md)
+- [밑그림 자산 기록](docs/ASSETS.md)
+- [콘솔 지면 자산](store/README.md)
+- [개인정보 처리방침·고객문의](https://ninetigers.github.io/one-line-summer/) — `site/`에서 자동 배포
 - [V4 약속 토스 역사 기준](docs/history/PRODUCT-SPEC-PROMISE-V4.md)
 
 ## 다음 하드 게이트
 
-1. Supabase의 불변 그림 상태 저장
+1. 콘솔 `appName` 확정
 2. Apps in Toss 두 실기기에서 링크 생성·수신·이어 그리기
-3. 다섯 그룹의 무설명 완주와 실제 재토스
-4. 실제 데이터로 한 붓을 주고받는 재미 가설 확인
-5. `.ait` 번들·콘솔 검수·출품 지면 자산
+3. Supabase의 불변 그림 상태 저장
+4. 다섯 그룹의 무설명 완주와 실제 재토스
+5. 실제 데이터로 한 붓을 주고받는 재미 가설 확인
+6. 콘솔 검수 통과와 출품 지면 자산
 
 게이트 전에는 현재 로컬 시뮬레이션을 실기기 공유 증거로 보고하지
 않는다.

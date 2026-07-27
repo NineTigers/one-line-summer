@@ -1,0 +1,63 @@
+<!doctype html><meta charset="utf-8">
+<title>한 줄 여름 스크린샷 2</title>
+<!--
+  그리기 화면. 친구가 보낸 한 붓 위에 내 한 붓을 그린 직후 상태다.
+  받은 링크(`?d=`)로 들어가 `한 붓 더하기`를 누르고, 캔버스에 포인터
+  이벤트를 흘려 실제 그리기 경로를 그대로 태운다. 좌표를 코드로 심는
+  것이 아니라 앱이 스스로 그린 결과를 찍는다.
+-->
+<link rel="stylesheet" href="./screenshot.css" />
+
+<h1 class="caption">한 붓을 그리면<br />바로 친구에게 토스해요</h1>
+<div class="frame">
+  <iframe
+    id="app"
+    title="그리기 화면"
+    src="/?d=BgACAQIHggGhBPoBT4QCboQCX4QCbPoBW9wBQA"
+  ></iframe>
+</div>
+
+<script>
+  // 앱 화면을 그리기 상태까지 몰아간다. 캡처 전용이며 제품에 없다.
+  const frame = document.querySelector("#app");
+
+  // 정규화 좌표(0~1)로 적은 한 붓. 해 위를 지나 오른쪽 위로 빠진다.
+  const path = [
+    [0.24, 0.3],
+    [0.33, 0.24],
+    [0.43, 0.27],
+    [0.52, 0.35],
+    [0.6, 0.3],
+    [0.69, 0.22],
+    [0.78, 0.17],
+  ];
+
+  function pointerEvent(type, canvas, [nx, ny]) {
+    const rect = canvas.getBoundingClientRect();
+    return new canvas.ownerDocument.defaultView.PointerEvent(type, {
+      bubbles: true,
+      pointerId: 1,
+      pointerType: "touch",
+      isPrimary: true,
+      clientX: rect.left + rect.width * nx,
+      clientY: rect.top + rect.height * ny,
+    });
+  }
+
+  frame.addEventListener("load", () => {
+    const doc = frame.contentDocument;
+    doc.querySelector("#acceptInviteButton").click();
+
+    const canvas = doc.querySelector("#drawCanvas");
+    // 포인터 캡처는 진짜 입력 장치에만 걸린다. 합성 이벤트에서는 비운다.
+    canvas.setPointerCapture = () => {};
+    canvas.hasPointerCapture = () => false;
+    canvas.releasePointerCapture = () => {};
+
+    canvas.dispatchEvent(pointerEvent("pointerdown", canvas, path[0]));
+    for (const point of path.slice(1)) {
+      canvas.dispatchEvent(pointerEvent("pointermove", canvas, point));
+    }
+    canvas.dispatchEvent(pointerEvent("pointerup", canvas, path.at(-1)));
+  });
+</script>

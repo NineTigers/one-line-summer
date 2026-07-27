@@ -1,10 +1,35 @@
+import {
+  FORMAT_VERSION,
+  LINK_PARAM,
+  MAX_STROKES,
+  decodeArtwork,
+  encodeArtwork,
+  readTokens,
+  reducePoints,
+} from "../link.js";
+import { hasSeenBefore } from "../lineage.js";
+import { openThemeOrder } from "../season.js";
+import {
+  anonymousKey,
+  logClick,
+  logEvent,
+  logScreen,
+  now,
+  tossShare,
+  tossShareLink,
+} from "../bridge.js";
+
 const CANVAS_WIDTH = 720;
 const CANVAS_HEIGHT = 900;
-const FORMAT_VERSION = 5;
-const MAX_STROKES = 12;
-const MAX_POINTS = 84;
-const STORAGE_KEY = "one-line-summer-nodes-v5";
-const LINK_PARAM = "d";
+/*
+ * 그리는 동안 담아두는 점의 상한.
+ *
+ * 링크에 실리는 점(`MAX_POINTS`)보다 넉넉해야 한다. 여기서 막으면 선이
+ * 손가락을 따라가다 멈춘다. 저장하는 순간 `reducePoints`가 줄인다.
+ */
+const MAX_DRAFT_POINTS = 240;
+const STORAGE_KEY = "one-line-summer-nodes-v6";
+const ANON_KEY_STORAGE = "one-line-summer-anon-key";
 
 const PALETTES = [
   {
@@ -38,14 +63,14 @@ const THEMES = [
     id: "sunset-beach",
     name: "선셋 비치",
     note: "노을이 내려앉은 해변",
-    asset: "./assets/theme-sunset-beach.jpg",
+    asset: "/assets/theme-sunset-beach.jpg",
     palette: 2,
   },
   {
     id: "bingsu-shop",
     name: "여름 빙수집",
     note: "햇살을 피해 들어온 오후",
-    asset: "./assets/theme-bingsu-shop.jpg",
+    asset: "/assets/theme-bingsu-shop.jpg",
     palette: 0,
   },
   {
@@ -59,33 +84,42 @@ const THEMES = [
     id: "han-river-picnic",
     name: "한강 피크닉",
     note: "강바람 부는 오후",
-    asset: "./assets/theme-han-river-picnic.jpg",
+    asset: "/assets/theme-han-river-picnic.jpg",
     palette: 0,
   },
   {
     id: "green-valley",
     name: "초록 계곡",
     note: "햇살 비치는 맑은 물",
-    asset: "./assets/theme-green-valley.jpg",
+    asset: "/assets/theme-green-valley.jpg",
     palette: 0,
   },
   {
     id: "monsoon-window",
     name: "장마 창가",
     note: "빗소리 듣는 한낮",
-    asset: "./assets/theme-monsoon-window.jpg",
+    asset: "/assets/theme-monsoon-window.jpg",
     palette: 1,
   },
   {
     id: "summer-fireworks",
     name: "여름밤 불꽃",
     note: "강변을 수놓은 밤",
-    asset: "./assets/theme-summer-fireworks.jpg",
+    asset: "/assets/theme-summer-fireworks.jpg",
     palette: 3,
   },
 ];
 
 const THEME_DISPLAY_ORDER = [0, 1, 3, 4, 5, 6, 2];
+
+/*
+ * 지금 고를 수 있는 밑그림.
+ *
+ * 서버 시각을 받기 전에는 기기 시각으로 그린다. 시각이 오면 다시 그린다.
+ * 아직 열리지 않은 밑그림으로 그린 그림을 받아도 화면에는 정상적으로
+ * 그려진다. 거르는 것은 고르는 목록뿐이다.
+ */
+let themeOrder = openThemeOrder(THEME_DISPLAY_ORDER, THEMES, Date.now());
 
 const THEME_IMAGES = THEMES.map((theme) => {
   if (!theme.asset) return null;
@@ -130,10 +164,22 @@ const state = {
   draftPoints: [],
   drawing: false,
   strokeCommitted: false,
+  // 전에 본 그림이 이어져 돌아왔는지. 화면 문구와 지표가 함께 쓴다.
+  returning: false,
   sharing: false,
   shareDoc: null,
   toastTimer: null,
 };
+
+/**
+ * 지금 그림에 쌓인 붓의 수.
+ *
+ * 릴레이가 몇 단계까지 이어지는지가 이 제품의 핵심 질문이라, 거의
+ * 모든 이벤트에 붙인다. 그림 내용은 담기지 않는다.
+ */
+function docDepth() {
+  return state.currentDoc?.strokes.length ?? 0;
+}
 
 function randomId() {
   if (crypto.randomUUID) return crypto.randomUUID();
@@ -144,10 +190,40 @@ function showScreen(target) {
   Object.values(screens).forEach((screen) => {
     screen.classList.toggle("hidden", screen !== target);
   });
+
+  /*
+   * 화면을 감추고 보이는 구조라, 그냥 두면 초점이 방금 사라진 요소에
+   * 남는다. 키보드 사용자는 다음 Tab이 어디서 이어질지 알 수 없고,
+   * 화면 낭독기는 새 화면을 읽지 않는다.
+   *
+   * 새 화면의 제목으로 옮긴다. 제목은 누르는 요소가 아니므로
+   * `tabindex="-1"`로 초점만 받고 Tab 순서에는 들어가지 않는다.
+   */
+  const heading = target.querySelector("h1");
+  if (heading) {
+    heading.setAttribute("tabindex", "-1");
+    heading.focus({ preventScroll: true });
+  }
+
   window.scrollTo({
     top: 0,
     behavior: prefersReducedMotion() ? "auto" : "smooth",
   });
+}
+
+/**
+ * 화면 전환과 히스토리 항목.
+ *
+ * 이 앱은 한 페이지에서 섹션을 감추고 보이는 방식이라 히스토리에 항목을
+ * 직접 넣지 않으면 토스 안에서 뒤로가기 한 번에 앱이 종료된다. 비게임
+ * 출시 체크리스트가 모든 화면에서 뒤로가기 동작을 요구한다.
+ */
+function navigateTo(name, push = true) {
+  const entry = { screen: name };
+  if (push) window.history.pushState(entry, "");
+  else window.history.replaceState(entry, "");
+  showScreen(screens[name]);
+  logScreen(`summer_${name}_viewed`, { depth: docDepth() });
 }
 
 function showToast(message) {
@@ -186,10 +262,7 @@ function sanitizePoint(point) {
 function sanitizeStroke(stroke, index) {
   if (!stroke || typeof stroke !== "object") return null;
   const points = Array.isArray(stroke.points)
-    ? stroke.points
-        .slice(0, MAX_POINTS)
-        .map(sanitizePoint)
-        .filter(Boolean)
+    ? stroke.points.map(sanitizePoint).filter(Boolean)
     : [];
   if (points.length < 2) return null;
   return {
@@ -199,7 +272,7 @@ function sanitizeStroke(stroke, index) {
     color: Number.isInteger(stroke.color)
       ? Math.max(0, Math.min(3, stroke.color))
       : index % 4,
-    points,
+    points: reducePoints(points),
   };
 }
 
@@ -247,41 +320,57 @@ function compactDoc(doc) {
   };
 }
 
+/**
+ * 링크 토큰과 문서 사이의 다리.
+ *
+ * 링크에는 그림만 담기므로(`src/link.js` 참고) 받는 쪽에서 식별자와
+ * 시각을 새로 만든다. 이름은 화면에 쓰지 않으므로 기본값을 준다.
+ */
 function encodeDoc(doc) {
-  const bytes = new TextEncoder().encode(JSON.stringify(compactDoc(doc)));
-  let binary = "";
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return encodeArtwork(doc);
 }
 
 function decodeDoc(token) {
-  if (!token) return null;
-  try {
-    let base64 = token.replace(/-/g, "+").replace(/_/g, "/");
-    while (base64.length % 4 !== 0) base64 += "=";
-    const binary = atob(base64);
-    const bytes = Uint8Array.from(binary, (character) =>
-      character.charCodeAt(0),
-    );
-    return sanitizeDoc(JSON.parse(new TextDecoder().decode(bytes)));
-  } catch (error) {
-    return null;
-  }
+  const artwork = decodeArtwork(token);
+  if (!artwork) return null;
+
+  const id = randomId();
+  return sanitizeDoc({
+    version: FORMAT_VERSION,
+    id,
+    rootId: id,
+    parentId: null,
+    palette: artwork.palette,
+    prompt: artwork.prompt,
+    strokes: artwork.strokes.map((stroke) => ({ ...stroke, id: randomId() })),
+    finished: false,
+    createdAt: Date.now(),
+  });
 }
 
+/**
+ * 주소에서 그림을 편다.
+ *
+ * 토큰이 어디에 실려 오는지는 `readTokens`가 안다. 링크가 잘렸거나
+ * 알아볼 수 없으면 `null`을 돌려주고 그 사실을 남긴다. 부르는 쪽은
+ * 막힌 화면 대신 첫 화면을 보여준다.
+ */
 function readDocFromLocation() {
-  const hash = window.location.hash.replace(/^#/, "");
-  return decodeDoc(new URLSearchParams(hash).get(LINK_PARAM));
+  const tokens = readTokens(window.location.search, window.location.hash);
+
+  for (const token of tokens) {
+    const doc = decodeDoc(token);
+    if (doc) return doc;
+  }
+
+  if (tokens.length) logEvent("summer_link_broken");
+  return null;
 }
 
 function basePageUrl() {
   const url = new URL(window.location.href);
   url.hash = "";
+  url.searchParams.delete(LINK_PARAM);
   return url.href;
 }
 
@@ -289,12 +378,13 @@ function docLink(doc) {
   return `${basePageUrl()}#${LINK_PARAM}=${encodeDoc(doc)}`;
 }
 
+/** 주소만 바꾸고 히스토리 항목의 화면 정보는 그대로 둔다. */
 function replaceLocationWithDoc(doc) {
-  window.history.replaceState(null, "", docLink(doc));
+  window.history.replaceState(window.history.state, "", docLink(doc));
 }
 
 function clearLocationDoc() {
-  window.history.replaceState(null, "", basePageUrl());
+  window.history.replaceState(window.history.state, "", basePageUrl());
 }
 
 function loadStoredNodes() {
@@ -438,7 +528,7 @@ function buildThemeOptions() {
   const group = document.querySelector("#themeGroup");
   group.replaceChildren();
 
-  THEME_DISPLAY_ORDER.forEach((index) => {
+  themeOrder.forEach((index) => {
     const theme = THEMES[index];
     const label = document.createElement("label");
     label.className = "theme-option";
@@ -515,19 +605,46 @@ function resetShareUi() {
   document.querySelector("#copyStatus").textContent = "";
 }
 
-function renderInvite() {
-  renderArtwork(canvases.invite, state.currentDoc);
-  const hasStroke = state.currentDoc.strokes.length > 0;
-  document.querySelector("#inviteEyebrow").textContent = hasStroke
-    ? "한 붓이 도착했어요"
-    : "여름 배경이 도착했어요";
-  document.querySelector("#inviteTitle").innerHTML = hasStroke
-    ? "친구가 한 붓을 보냈어요<br />원하는 곳에 한 붓을 더해요"
-    : "친구가 여름 배경을 골랐어요<br />첫 한 붓을 더해요";
-  showScreen(screens.invite);
+/** 링크에 더 실을 수 없을 만큼 붓이 찼는지. */
+function isFull(doc) {
+  return doc.strokes.length >= MAX_STROKES;
 }
 
-function renderDraw() {
+function renderInvite(push = true) {
+  renderArtwork(canvases.invite, state.currentDoc);
+  const hasStroke = state.currentDoc.strokes.length > 0;
+  const full = isFull(state.currentDoc);
+  const eyebrow = document.querySelector("#inviteEyebrow");
+  const title = document.querySelector("#inviteTitle");
+  const action = document.querySelector("#acceptInviteButton");
+
+  /*
+   * 붓이 상한까지 차면 더 받을 수 없다. 그냥 두면 다음 사람이 그린 붓이
+   * 화면에는 보이는데 링크에서는 잘려서, 받는 쪽에서 조용히 사라진다.
+   * 그리기 전에 멈추고 다음 행동을 준다. 막힌 화면을 만들지 않는다.
+   */
+  if (full) {
+    eyebrow.textContent = "가득 찬 그림이 도착했어요";
+    title.innerHTML = "여기까지 함께 그렸어요<br />새 그림을 시작해 보세요";
+    action.textContent = "새 그림 시작하기";
+  } else if (state.returning) {
+    eyebrow.textContent = "그림이 돌아왔어요";
+    title.innerHTML = "친구가 한 붓을 더했어요<br />이어서 한 붓 더 그려요";
+    action.textContent = "한 붓 더하기";
+  } else {
+    eyebrow.textContent = hasStroke
+      ? "한 붓이 도착했어요"
+      : "여름 배경이 도착했어요";
+    title.innerHTML = hasStroke
+      ? "친구가 한 붓을 보냈어요<br />원하는 곳에 한 붓을 더해요"
+      : "친구가 여름 배경을 골랐어요<br />첫 한 붓을 더해요";
+    action.textContent = "한 붓 더하기";
+  }
+
+  navigateTo("invite", push);
+}
+
+function renderDraw(push = true) {
   const count = state.currentDoc.strokes.length;
   const palette = PALETTES[state.currentDoc.palette];
   state.draftPoints = [];
@@ -557,12 +674,13 @@ function renderDraw() {
   commitButton.textContent = "친구에게 토스하기";
   document.querySelector("#drawStatus").textContent =
     "캔버스 어디서든 시작할 수 있어요.";
-  showScreen(screens.draw);
+  navigateTo("draw", push);
 }
 
 function beginNew() {
   state.currentDoc = null;
   state.incoming = false;
+  state.returning = false;
   state.actor = "A";
   state.actorName = "나";
   state.palette = THEMES[0].palette;
@@ -571,14 +689,29 @@ function beginNew() {
   state.draftPoints = [];
   buildThemeOptions();
   clearLocationDoc();
-  showScreen(screens.setup);
+  navigateTo("setup");
 }
 
-function loadFromLocation() {
+function loadFromLocation(push = false, isEntry = false) {
   const incomingDoc = readDocFromLocation();
+
   if (!incomingDoc) {
-    showScreen(screens.home);
+    if (isEntry) logEvent("summer_entry_viewed", { entry_type: "direct" });
+    navigateTo("home", push);
     return;
+  }
+
+  /*
+   * 저장된 그림을 먼저 본다. `saveNode` 뒤에 보면 방금 넣은 그림 때문에
+   * 무조건 재방문으로 잡힌다.
+   */
+  state.returning = hasSeenBefore(loadStoredNodes(), incomingDoc);
+
+  if (isEntry) {
+    logEvent("summer_entry_viewed", {
+      entry_type: state.returning ? "returned" : "shared",
+      depth: incomingDoc.strokes.length,
+    });
   }
 
   state.currentDoc = incomingDoc;
@@ -586,7 +719,7 @@ function loadFromLocation() {
   state.actor = nextActor(incomingDoc);
   state.actorName = "다음 친구";
   saveNode(incomingDoc);
-  renderInvite();
+  renderInvite(push);
 }
 
 function eventPoint(event) {
@@ -629,6 +762,7 @@ function beginStroke(event) {
 
   state.drawing = true;
   state.draftPoints = [eventPoint(event)];
+  logEvent("summer_stroke_started", { depth: docDepth() });
   canvases.draw.setPointerCapture(event.pointerId);
   document.querySelector("#drawStatus").textContent =
     "손가락을 떼면 이 한 붓이 끝나요.";
@@ -640,7 +774,7 @@ function extendStroke(event) {
   const previous = state.draftPoints.at(-1);
   if (pointDistance(point, previous) < 8) return;
 
-  if (state.draftPoints.length >= MAX_POINTS) {
+  if (state.draftPoints.length >= MAX_DRAFT_POINTS) {
     state.draftPoints[state.draftPoints.length - 1] = point;
   } else {
     state.draftPoints.push(point);
@@ -663,7 +797,9 @@ function endStroke(event) {
   document.querySelector("#undoButton").disabled = !ready;
   document.querySelector("#commitButton").disabled = !ready;
   document.querySelector("#drawStatus").textContent = ready
-    ? "한 붓이 준비됐어요. 친구에게 바로 토스할 수 있어요."
+    ? state.incoming
+      ? "한 붓이 준비됐어요. 보내준 친구에게 돌려줄 수 있어요."
+      : "한 붓이 준비됐어요. 친구에게 바로 토스할 수 있어요."
     : "조금 더 길게 그려주세요.";
 }
 
@@ -683,13 +819,22 @@ function commitDraftStroke() {
     return state.currentDoc;
   }
 
+  /*
+   * 마지막 방어선. 상한을 넘긴 붓은 링크에서 잘려 받는 쪽에서 사라지므로,
+   * 애초에 문서에 넣지 않는다. 여기 걸리면 화면 흐름에 구멍이 있는 것이다.
+   */
+  if (isFull(state.currentDoc)) {
+    showToast("이 그림은 더 이어 그릴 수 없어요.");
+    return state.currentDoc;
+  }
+
   const nodeId = randomId();
   const stroke = {
     id: nodeId,
     actor: state.actor,
     name: safeName(state.actorName),
     color: state.strokeColor,
-    points: state.draftPoints.slice(0, MAX_POINTS),
+    points: reducePoints(state.draftPoints),
   };
   const child = {
     ...state.currentDoc,
@@ -700,6 +845,7 @@ function commitDraftStroke() {
     createdAt: Date.now(),
   };
 
+  logEvent("summer_stroke_saved", { depth: child.strokes.length });
   state.currentDoc = child;
   state.shareDoc = child;
   state.draftPoints = [];
@@ -734,13 +880,26 @@ function showShareFallback(link) {
   });
 }
 
-async function shareLinkWithPlatform(link) {
-  // Apps in Toss 번들에서는 이 경계에서 getTossShareLink()와 share()를
-  // 사용한다. 정적 체험판은 브라우저 공유와 클립보드로 같은 흐름을 검증한다.
+const SHARE_TEXT = "내 한 붓 위에 친구의 여름을 더해 주세요.";
+
+/**
+ * 링크 토스 경계.
+ *
+ * 토스 안이면 딥링크를 만들어 네이티브 공유 시트로 보낸다. 브릿지가 없는
+ * 브라우저에서는 시스템 공유와 클립보드로 같은 흐름을 검증한다.
+ * 어느 경로도 못 쓰면 링크를 직접 복사할 수 있게 `fallback`을 돌려준다.
+ */
+async function shareLinkWithPlatform(doc, link) {
+  const deepLink = await tossShareLink(encodeDoc(doc));
+  if (deepLink) {
+    const result = await tossShare(`${SHARE_TEXT}\n${deepLink}`);
+    if (result === "shared") return "shared";
+  }
+
   if (typeof navigator.share === "function") {
     await navigator.share({
       title: "한 줄 여름",
-      text: "내 한 붓 위에 친구의 여름을 더해 주세요.",
+      text: SHARE_TEXT,
       url: link,
     });
     return "shared";
@@ -767,7 +926,8 @@ async function shareArtwork(doc) {
     "공유할 앱을 준비하고 있어요.";
 
   try {
-    const result = await shareLinkWithPlatform(link);
+    const result = await shareLinkWithPlatform(doc, link);
+    logEvent("summer_toss_result", { result, depth: doc.strokes.length });
     if (result === "shared") {
       showToast("공유를 마쳤어요.");
       document.querySelector("#drawStatus").textContent =
@@ -783,6 +943,10 @@ async function shareArtwork(doc) {
     }
   } catch (error) {
     if (error?.name === "AbortError") {
+      logEvent("summer_toss_result", {
+        result: "cancelled",
+        depth: doc.strokes.length,
+      });
       document.querySelector("#drawStatus").textContent =
         "공유를 취소했어요. 다시 토스할 수 있어요.";
     } else if (await copyLink(link)) {
@@ -801,6 +965,7 @@ async function shareArtwork(doc) {
 
 async function commitAndShare() {
   if (state.sharing || !state.currentDoc) return;
+  logClick("summer_toss_tapped", { depth: docDepth() });
   const doc = state.strokeCommitted
     ? state.shareDoc || state.currentDoc
     : commitDraftStroke();
@@ -808,11 +973,57 @@ async function commitAndShare() {
   await shareArtwork(doc);
 }
 
+/**
+ * 익명 사용자 키.
+ *
+ * 비게임 출시 체크리스트가 사용자 식별자 저장을 필수로 요구한다. 토스
+ * 밖에서는 키를 받을 수 없고, 없어도 그리기와 링크 토스는 그대로 된다.
+ * 그림·링크와 함께 보내지 않고 기기에만 둔다.
+ */
+async function ensureAnonymousKey() {
+  try {
+    if (localStorage.getItem(ANON_KEY_STORAGE)) return;
+  } catch {
+    return; // 저장소를 못 쓰면 식별자도 남기지 않는다.
+  }
+
+  const result = await anonymousKey();
+  if (result.status !== "ok") return;
+
+  try {
+    localStorage.setItem(ANON_KEY_STORAGE, result.hash);
+  } catch {
+    // 저장 실패가 제품을 막지 않는다.
+  }
+}
+
+/** 뒤로가기로 돌아온 화면을 히스토리 항목을 늘리지 않고 되살린다. */
+function restoreScreen(name) {
+  if (name === "setup") {
+    buildThemeOptions();
+    navigateTo("setup", false);
+    return;
+  }
+  if (name === "draw" && state.currentDoc) {
+    renderDraw(false);
+    return;
+  }
+  if (name === "invite" && state.currentDoc) {
+    renderInvite(false);
+    return;
+  }
+  navigateTo("home", false);
+}
+
 buildThemeOptions();
 
-document.querySelector("#startButton").addEventListener("click", beginNew);
+document.querySelector("#startButton").addEventListener("click", () => {
+  logClick("summer_start_tapped");
+  beginNew();
+});
 
 document.querySelector("#createCanvasButton").addEventListener("click", () => {
+  logClick("summer_theme_selected", { theme_key: THEMES[state.prompt].id });
   state.actor = "A";
   state.actorName = "나";
   state.currentDoc = createRootDoc();
@@ -821,6 +1032,14 @@ document.querySelector("#createCanvasButton").addEventListener("click", () => {
 });
 
 document.querySelector("#acceptInviteButton").addEventListener("click", () => {
+  // 가득 찬 그림은 이어 그릴 수 없다. 새 그림으로 보낸다.
+  if (isFull(state.currentDoc)) {
+    logClick("summer_full_restarted", { depth: docDepth() });
+    beginNew();
+    return;
+  }
+
+  logClick("summer_invite_accepted", { depth: docDepth() });
   state.actorName = "다음 친구";
   renderDraw();
 });
@@ -845,6 +1064,26 @@ document.querySelector("#copyButton").addEventListener("click", async () => {
   else document.querySelector("#shareLink").select();
 });
 
-window.addEventListener("hashchange", loadFromLocation);
+window.addEventListener("popstate", (event) => {
+  restoreScreen(event.state?.screen);
+});
 
-loadFromLocation();
+// 프래그먼트가 바뀌면서 이미 히스토리 항목이 생기므로 여기서 더 넣지 않는다.
+window.addEventListener("hashchange", () => loadFromLocation(false));
+
+/*
+ * 서버 시각이 오면 밑그림 목록을 다시 그린다. 배경 선택 화면을 보고
+ * 있는 중에도 조용히 갱신된다.
+ */
+now().then((at) => {
+  const next = openThemeOrder(THEME_DISPLAY_ORDER, THEMES, at);
+  if (next.join() === themeOrder.join()) return;
+  themeOrder = next;
+  if (!themeOrder.includes(state.prompt)) {
+    state.prompt = themeOrder[0];
+    state.palette = THEMES[state.prompt].palette;
+  }
+  buildThemeOptions();
+});
+ensureAnonymousKey();
+loadFromLocation(false, true);
