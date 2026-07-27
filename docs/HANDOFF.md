@@ -70,8 +70,8 @@ Vite 앱이다. `npm install && npm run dev`로 돈다.
 - **실기기 증거 없음.** 두 기기 왕복을 한 번도 못 했다.
 - **사용자 증거 없음.** 플레이테스트 미실시.
 - 콘솔 등록 없음. `appName`은 임시값 `one-line-summer`다.
-- `site/`의 개인정보 보호책임자 이름이 아직 `TODO`다. 페이지 자체는
-  https://ninetigers.github.io/one-line-summer/ 에 떠 있다.
+- `site/`의 고객문의 이메일이 실제로 받는 주소인지 확인되지 않았다.
+  페이지는 https://ninetigers.github.io/one-line-summer/ 에 떠 있다.
 
 ### 저장소 지도
 
@@ -111,8 +111,7 @@ Vite 앱이다. `npm install && npm run dev`로 돈다.
    `src/bridge.js`의 `APP_NAME`을 **둘 다** 바꾼다
 6. ~~`site/` 호스팅~~ — https://ninetigers.github.io/one-line-summer/ 에 떠 있다.
    `site/`를 밀면 GitHub Actions가 자동 배포한다
-7. `site/`의 TODO 두 개(개인정보 보호책임자 이름, 문의 이메일 확인)를
-   채운다
+7. `site/`의 고객문의 이메일이 실제로 받는 주소인지 확인한다
 8. 콘솔 등록
 
 ### P1 — 제품이 실제로 성립하려면

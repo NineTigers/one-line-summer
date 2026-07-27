@@ -95,10 +95,10 @@
 | --- | --- |
 | 개인정보 처리방침 | https://ninetigers.github.io/one-line-summer/privacy.html |
 
-`site/`를 밀면 GitHub Actions가 자동 배포한다. 페이지는 이미 떠 있다.
+`site/`를 밀면 GitHub Actions가 자동 배포한다.
 
-`site/privacy.html`에 남은 TODO(개인정보 보호책임자 이름)를 채우고
-다시 밀어야 등록용으로 완성된다.
+개인정보 보호책임자는 **임인구**로 표기했다. 운영자(사업자) 표기는
+넣지 않았다. 필요한지 확인할 것.
 
 입구: https://ninetigers.github.io/one-line-summer/
 
