@@ -2,7 +2,15 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      비게임 출시 체크리스트가 지도처럼 꼭 필요한 경우가 아니면 제스처
+      확대를 막도록 요구한다. 캔버스에 손가락으로 그리는 앱이라 핀치가
+      열려 있으면 그리는 도중 화면이 확대된다.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <meta name="theme-color" content="#ffffff" />
     <title>한 줄 여름</title>
     <meta
