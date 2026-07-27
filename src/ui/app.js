@@ -604,15 +604,38 @@ function resetShareUi() {
   document.querySelector("#copyStatus").textContent = "";
 }
 
+/** 링크에 더 실을 수 없을 만큼 붓이 찼는지. */
+function isFull(doc) {
+  return doc.strokes.length >= MAX_STROKES;
+}
+
 function renderInvite(push = true) {
   renderArtwork(canvases.invite, state.currentDoc);
   const hasStroke = state.currentDoc.strokes.length > 0;
-  document.querySelector("#inviteEyebrow").textContent = hasStroke
-    ? "한 붓이 도착했어요"
-    : "여름 배경이 도착했어요";
-  document.querySelector("#inviteTitle").innerHTML = hasStroke
-    ? "친구가 한 붓을 보냈어요<br />원하는 곳에 한 붓을 더해요"
-    : "친구가 여름 배경을 골랐어요<br />첫 한 붓을 더해요";
+  const full = isFull(state.currentDoc);
+  const eyebrow = document.querySelector("#inviteEyebrow");
+  const title = document.querySelector("#inviteTitle");
+  const action = document.querySelector("#acceptInviteButton");
+
+  /*
+   * 붓이 상한까지 차면 더 받을 수 없다. 그냥 두면 다음 사람이 그린 붓이
+   * 화면에는 보이는데 링크에서는 잘려서, 받는 쪽에서 조용히 사라진다.
+   * 그리기 전에 멈추고 다음 행동을 준다. 막힌 화면을 만들지 않는다.
+   */
+  if (full) {
+    eyebrow.textContent = "가득 찬 그림이 도착했어요";
+    title.innerHTML = "여기까지 함께 그렸어요<br />새 그림을 시작해 보세요";
+    action.textContent = "새 그림 시작하기";
+  } else {
+    eyebrow.textContent = hasStroke
+      ? "한 붓이 도착했어요"
+      : "여름 배경이 도착했어요";
+    title.innerHTML = hasStroke
+      ? "친구가 한 붓을 보냈어요<br />원하는 곳에 한 붓을 더해요"
+      : "친구가 여름 배경을 골랐어요<br />첫 한 붓을 더해요";
+    action.textContent = "한 붓 더하기";
+  }
+
   navigateTo("invite", push);
 }
 
@@ -770,6 +793,15 @@ function resetDraftStroke() {
 
 function commitDraftStroke() {
   if (state.draftPoints.length < 3 || !state.currentDoc) {
+    return state.currentDoc;
+  }
+
+  /*
+   * 마지막 방어선. 상한을 넘긴 붓은 링크에서 잘려 받는 쪽에서 사라지므로,
+   * 애초에 문서에 넣지 않는다. 여기 걸리면 화면 흐름에 구멍이 있는 것이다.
+   */
+  if (isFull(state.currentDoc)) {
+    showToast("이 그림은 더 이어 그릴 수 없어요.");
     return state.currentDoc;
   }
 
@@ -977,6 +1009,13 @@ document.querySelector("#createCanvasButton").addEventListener("click", () => {
 });
 
 document.querySelector("#acceptInviteButton").addEventListener("click", () => {
+  // 가득 찬 그림은 이어 그릴 수 없다. 새 그림으로 보낸다.
+  if (isFull(state.currentDoc)) {
+    logClick("summer_full_restarted", { depth: docDepth() });
+    beginNew();
+    return;
+  }
+
   logClick("summer_invite_accepted", { depth: docDepth() });
   state.actorName = "다음 친구";
   renderDraw();
