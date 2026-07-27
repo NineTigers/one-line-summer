@@ -175,6 +175,21 @@ function showScreen(target) {
   Object.values(screens).forEach((screen) => {
     screen.classList.toggle("hidden", screen !== target);
   });
+
+  /*
+   * 화면을 감추고 보이는 구조라, 그냥 두면 초점이 방금 사라진 요소에
+   * 남는다. 키보드 사용자는 다음 Tab이 어디서 이어질지 알 수 없고,
+   * 화면 낭독기는 새 화면을 읽지 않는다.
+   *
+   * 새 화면의 제목으로 옮긴다. 제목은 누르는 요소가 아니므로
+   * `tabindex="-1"`로 초점만 받고 Tab 순서에는 들어가지 않는다.
+   */
+  const heading = target.querySelector("h1");
+  if (heading) {
+    heading.setAttribute("tabindex", "-1");
+    heading.focus({ preventScroll: true });
+  }
+
   window.scrollTo({
     top: 0,
     behavior: prefersReducedMotion() ? "auto" : "smooth",

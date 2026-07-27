@@ -43,6 +43,15 @@ button {
   touch-action: manipulation;
 }
 
+/*
+ * 화면이 바뀔 때 제목으로 초점을 옮긴다. 제목은 누르는 요소가 아니므로
+ * 초점 테두리를 그리지 않는다. 실제로 누르는 요소의 초점 표시는 그대로
+ * 둔다.
+ */
+h1[tabindex="-1"]:focus {
+  outline: none;
+}
+
 button,
 label {
   -webkit-tap-highlight-color: transparent;
