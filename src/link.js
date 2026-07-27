@@ -101,6 +101,46 @@ export function reducePoints(points, limit = MAX_POINTS, tolerance = 6) {
   return thinned;
 }
 
+/** 링크에서 그림 토큰을 싣는 이름. */
+export const LINK_PARAM = "d";
+
+/**
+ * 주소에서 그림 토큰을 찾는다. 나온 순서대로 전부 돌려준다.
+ *
+ * 웹 링크는 프래그먼트(`#d=`), 토스 딥링크는 쿼리(`?d=`)를 쓴다.
+ * 그런데 `getTossShareLink()`가 만든 링크는 `deep_link_value` 안에
+ * 원래 주소를 감싸서 전달할 수 있다. 그 경우 `d`가 한 겹 안쪽에 있다.
+ *
+ * **어느 형태로 오는지 실기기에서 확인하지 못했다.** 셋 중 무엇이 와도
+ * 열리게 한다. 여기서 못 찾으면 받은 사람은 그림을 아예 못 본다.
+ */
+export function readTokens(search, hash) {
+  const found = [];
+
+  const collect = (source) => {
+    if (!source) return;
+    const params = new URLSearchParams(source.replace(/^[?#]/, ""));
+
+    const direct = params.get(LINK_PARAM);
+    if (direct) found.push(direct);
+
+    // 딥링크가 원래 주소를 통째로 감싸 보낸 경우 한 겹 벗긴다.
+    const wrapped = params.get("deep_link_value");
+    if (wrapped) {
+      const inner = decodeURIComponent(wrapped);
+      const at = inner.indexOf("?");
+      if (at !== -1) {
+        const nested = new URLSearchParams(inner.slice(at + 1)).get(LINK_PARAM);
+        if (nested) found.push(nested);
+      }
+    }
+  };
+
+  collect(search);
+  collect(hash);
+  return found;
+}
+
 function writeVarint(bytes, value) {
   let rest = value;
   while (rest >= 0x80) {

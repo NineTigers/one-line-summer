@@ -7,6 +7,7 @@ import {
   MAX_STROKES,
   decodeArtwork,
   encodeArtwork,
+  readTokens,
   reducePoints,
 } from "../src/link.js";
 
@@ -175,5 +176,48 @@ describe("점 줄이기", () => {
     const reduced = reducePoints(arc);
     assert.ok(reduced.length > 4, "완만한 곡선을 직선으로 뭉개면 안 된다");
     assert.ok(reduced.length <= MAX_POINTS);
+  });
+});
+
+describe("주소에서 토큰 찾기", () => {
+  const token = encodeArtwork(artwork(2, 10));
+
+  it("쿼리에서 찾는다 (딥링크 형태)", () => {
+    assert.deepEqual(readTokens(`?d=${token}`, ""), [token]);
+  });
+
+  it("프래그먼트에서 찾는다 (웹 링크 형태)", () => {
+    assert.deepEqual(readTokens("", `#d=${token}`), [token]);
+  });
+
+  /*
+   * `getTossShareLink()`가 만든 링크는 원래 주소를 `deep_link_value`
+   * 안에 감싸서 전달할 수 있다. 어느 형태로 오는지 실기기에서 확인하지
+   * 못했으므로 셋 다 받는다. 못 찾으면 받은 사람은 그림을 못 본다.
+   */
+  it("deep_link_value 안에 감싸여 와도 찾는다", () => {
+    const inner = encodeURIComponent(`intoss://one-line-summer/?d=${token}`);
+    assert.deepEqual(readTokens(`?deep_link_value=${inner}`, ""), [token]);
+  });
+
+  it("감싼 주소가 프래그먼트에 있어도 찾는다", () => {
+    const inner = encodeURIComponent(`intoss://one-line-summer/?d=${token}`);
+    assert.deepEqual(readTokens("", `#deep_link_value=${inner}`), [token]);
+  });
+
+  it("다른 파라미터가 섞여 있어도 찾는다", () => {
+    assert.deepEqual(readTokens(`?utm_source=toss&d=${token}`, ""), [token]);
+  });
+
+  it("토큰이 없으면 빈 목록이다", () => {
+    assert.deepEqual(readTokens("", ""), []);
+    assert.deepEqual(readTokens("?other=1", "#x=2"), []);
+    assert.deepEqual(readTokens("?deep_link_value=intoss%3A%2F%2Fapp", ""), []);
+  });
+
+  it("찾은 토큰이 실제로 그림으로 펴진다", () => {
+    const inner = encodeURIComponent(`intoss://one-line-summer/?d=${token}`);
+    const [found] = readTokens(`?deep_link_value=${inner}`, "");
+    assert.equal(decodeArtwork(found).strokes.length, 2);
   });
 });

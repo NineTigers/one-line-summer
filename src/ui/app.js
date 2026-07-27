@@ -1,8 +1,10 @@
 import {
   FORMAT_VERSION,
+  LINK_PARAM,
   MAX_STROKES,
   decodeArtwork,
   encodeArtwork,
+  readTokens,
   reducePoints,
 } from "../link.js";
 import { openThemeOrder } from "../season.js";
@@ -27,7 +29,6 @@ const CANVAS_HEIGHT = 900;
 const MAX_DRAFT_POINTS = 240;
 const STORAGE_KEY = "one-line-summer-nodes-v6";
 const ANON_KEY_STORAGE = "one-line-summer-anon-key";
-const LINK_PARAM = "d";
 
 const PALETTES = [
   {
@@ -352,10 +353,7 @@ function decodeDoc(token) {
  * 어느 쪽으로 들어와도 같은 그림이 열려야 한다.
  */
 function readLinkToken() {
-  return (
-    new URLSearchParams(window.location.search).get(LINK_PARAM) ||
-    new URLSearchParams(window.location.hash.replace(/^#/, "")).get(LINK_PARAM)
-  );
+  return readTokens(window.location.search, window.location.hash)[0] || null;
 }
 
 /**
@@ -363,10 +361,7 @@ function readLinkToken() {
  * 부르는 쪽은 막힌 화면 대신 첫 화면을 보여준다.
  */
 function readDocFromLocation() {
-  const tokens = [
-    new URLSearchParams(window.location.search).get(LINK_PARAM),
-    new URLSearchParams(window.location.hash.replace(/^#/, "")).get(LINK_PARAM),
-  ].filter(Boolean);
+  const tokens = readTokens(window.location.search, window.location.hash);
 
   for (const token of tokens) {
     const doc = decodeDoc(token);
