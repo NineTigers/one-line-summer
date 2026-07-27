@@ -5,11 +5,13 @@ import {
   encodeArtwork,
   reducePoints,
 } from "../link.js";
+import { openThemeOrder } from "../season.js";
 import {
   anonymousKey,
   logClick,
   logEvent,
   logScreen,
+  now,
   tossShare,
   tossShareLink,
 } from "../bridge.js";
@@ -107,6 +109,15 @@ const THEMES = [
 ];
 
 const THEME_DISPLAY_ORDER = [0, 1, 3, 4, 5, 6, 2];
+
+/*
+ * 지금 고를 수 있는 밑그림.
+ *
+ * 서버 시각을 받기 전에는 기기 시각으로 그린다. 시각이 오면 다시 그린다.
+ * 아직 열리지 않은 밑그림으로 그린 그림을 받아도 화면에는 정상적으로
+ * 그려진다. 거르는 것은 고르는 목록뿐이다.
+ */
+let themeOrder = openThemeOrder(THEME_DISPLAY_ORDER, THEMES, Date.now());
 
 const THEME_IMAGES = THEMES.map((theme) => {
   if (!theme.asset) return null;
@@ -527,7 +538,7 @@ function buildThemeOptions() {
   const group = document.querySelector("#themeGroup");
   group.replaceChildren();
 
-  THEME_DISPLAY_ORDER.forEach((index) => {
+  themeOrder.forEach((index) => {
     const theme = THEMES[index];
     const label = document.createElement("label");
     label.className = "theme-option";
@@ -1050,6 +1061,21 @@ window.addEventListener("hashchange", () => loadFromLocation(false));
 
 logEvent("summer_entry_viewed", {
   entry_type: readLinkToken() ? "shared" : "direct",
+});
+
+/*
+ * 서버 시각이 오면 밑그림 목록을 다시 그린다. 배경 선택 화면을 보고
+ * 있는 중에도 조용히 갱신된다.
+ */
+now().then((at) => {
+  const next = openThemeOrder(THEME_DISPLAY_ORDER, THEMES, at);
+  if (next.join() === themeOrder.join()) return;
+  themeOrder = next;
+  if (!themeOrder.includes(state.prompt)) {
+    state.prompt = themeOrder[0];
+    state.palette = THEMES[state.prompt].palette;
+  }
+  buildThemeOptions();
 });
 ensureAnonymousKey();
 loadFromLocation(false);

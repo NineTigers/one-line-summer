@@ -93,6 +93,28 @@ export async function tossShare(message) {
 }
 
 /**
+ * 지금 시각.
+ *
+ * 밑그림 공개 일정을 기기 시각으로 판단하면 시계를 바꾼 사람에게 먼저
+ * 열린다. 토스 서버 시각을 우선 쓰고, 못 받으면 기기 시각으로 넘어간다.
+ * 못 받았다고 앱이 멈추지는 않는다.
+ */
+export async function now() {
+  const sdk = await loadSdk();
+  if (typeof sdk?.getServerTime !== "function") return Date.now();
+
+  try {
+    if (sdk.getServerTime.isSupported?.() === false) return Date.now();
+    const serverTime = await sdk.getServerTime();
+    return typeof serverTime === "number" && serverTime > 0
+      ? serverTime
+      : Date.now();
+  } catch {
+    return Date.now();
+  }
+}
+
+/**
  * 분석 이벤트.
  *
  * 이벤트 사전은 `docs/ANALYTICS.md`에 있다. 그림 좌표·링크 토큰·익명
